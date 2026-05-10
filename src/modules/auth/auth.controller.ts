@@ -21,7 +21,7 @@ export const authController = {
       sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
-        message: "New Access Token Retrived Successfully",
+        message: "New access token retrieved successfully",
         data: tokenInfo,
       });
     },

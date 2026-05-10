@@ -5,7 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import { httpMessages } from "./constants/httpMessages";
 import { globalErrorHandler } from "./middleware/globalErrorHandler.middleware";
 import { notFound } from "./middleware/notFound.middleware";
-import { v1router } from "./routes";
+import { v1Router } from "./routes";
 import { sendResponse } from "./utils/sendResponse";
 import redisClient from "./config/redis.config";
 
@@ -39,7 +39,7 @@ app.set("trust proxy", 1);
 app.use(express.urlencoded({ extended: true }));
 app.options(/.*/, cors(corsOptions));
 
-app.use("/api/v1", v1router);
+app.use("/api/v1", v1Router);
 // entry point
 app.get("/", (req: Request, res: Response, next: NextFunction) => {
   try {

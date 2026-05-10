@@ -1,4 +1,4 @@
-import { CACHE_KEYS, CACHE_TTL } from "../../constants/cacheKeys.constant";
+import { CACHE_KEYS, CACHE_TTL } from "../../constants/cacheKeys";
 import { cacheWrapperService } from "../../services/cacheWrapper.service";
 import QueryBuilder from "../../utils/queryBuilder";
 import { normalizeReferrer } from "../../utils/normalizeReferrer";

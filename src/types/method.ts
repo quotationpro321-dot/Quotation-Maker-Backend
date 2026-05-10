@@ -1,4 +1,4 @@
 export interface IMongooseMethod {
-  comparePassword(realPassword: string): Promise<boolean>;
+  comparePassword(plainTextPassword: string): Promise<boolean>;
   //   updateAvailability(): void;
 }

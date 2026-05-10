@@ -3,7 +3,7 @@ import { AuthRoutes } from "../modules/auth/auth.routes";
 import { DashboardRoutes } from "../modules/dashboard/dashboard.routes";
 import { AnalyticsRoutes } from "../modules/analytics/analytics.routes";
 
-export const v1router = Router();
+export const v1Router = Router();
 
 const moduleRoutes = [
   { path: "/auth", route: AuthRoutes },
@@ -12,5 +12,5 @@ const moduleRoutes = [
 ];
 
 moduleRoutes.forEach((route) => {
-  v1router.use(route.path, route.route);
+  v1Router.use(route.path, route.route);
 });

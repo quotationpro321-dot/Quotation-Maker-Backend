@@ -1,13 +1,23 @@
-export enum Role {
+export enum UserRole {
   ADMIN = "admin",
-  SUPER_ADMIN = "superAdmin",
-  USER = "user",
+  EMPLOYEE = "employee",
+}
+
+export enum UserStatus {
+  BLOCKED = "blocked",
+  DELETED = "deleted",
+  ACTIVE = "active",
+  INACTIVE = "inactive",
+  BANNED = "banned",
 }
 
 export interface IUser {
-  _id?: string;
+  userId?: string;
   name: string;
   email: string;
   password: string;
-  role: Role;
+  role: UserRole;
+  status: UserStatus;
+  profilePhotoUrl?: string;
+  passwordChangedAt?: Date;
 }

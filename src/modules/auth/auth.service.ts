@@ -1,10 +1,10 @@
 import { Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { CACHE_KEYS } from "../../constants/cacheKeys.constant";
+import { CACHE_KEYS } from "../../constants/cacheKeys";
 import { cacheService } from "../../services/cache.service";
 import AppError from "../../utils/AppError";
 import { setAuthCookie } from "../../utils/setCookie";
-import { createNewAccessTokenWithRefreshToken, createUsersToken } from "../../utils/userTokens";
+import { createNewAccessTokenWithRefreshToken, createUserAuthTokens } from "../../utils/userTokens";
 import { User } from "../user/user.model";
 import { IUser } from "../user/user.types";
 
@@ -20,18 +20,16 @@ export const authService = {
 
     const cacheKey = CACHE_KEYS.USER_BY_EMAIL(email as string);
 
-    let isUserExist = await cacheService.get<IUser>(cacheKey);
+    let cachedUser = await cacheService.get<IUser>(cacheKey);
 
-    if (!isUserExist) {
-      // 2. DB fallback
-      isUserExist = await User.findOne({ email });
+    if (!cachedUser) {
+      cachedUser = await User.findOne({ email });
 
-      if (!isUserExist) {
+      if (!cachedUser) {
         throw new AppError(StatusCodes.BAD_REQUEST, "Email does not exist");
       }
 
-      // 3. Cache it (short TTL for auth)
-      await cacheService.set(cacheKey, isUserExist, 60);
+      await cacheService.set(cacheKey, cachedUser, 60);
     }
 
     const user = await User.findOne({ email });
@@ -43,7 +41,7 @@ export const authService = {
       throw new AppError(StatusCodes.BAD_REQUEST, "Invalid Password");
     }
 
-    const { accessToken, refreshToken } = createUsersToken(isUserExist);
+    const { accessToken, refreshToken } = createUserAuthTokens(cachedUser);
     setAuthCookie(res, {
       accessToken,
       refreshToken,

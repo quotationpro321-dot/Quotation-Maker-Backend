@@ -10,9 +10,10 @@ interface EnvConfig {
   JWT_ACCESS_SECRET: string;
   JWT_REFRESH_SECRET: string;
   JWT_REFRESH_EXPIRES_IN: string;
-  BCRYPT_SALT_ROUND: string;
-  SUPER_ADMIN_EMAIL: string;
-  SUPER_ADMIN_PASSWORD: string;
+  BCRYPT_SALT_ROUNDS: string;
+  ADMIN_NAME: string;
+  ADMIN_EMAIL: string;
+  ADMIN_PASSWORD: string;
   CLOUDINARY: {
     CLOUDINARY_CLOUD_NAME: string;
     CLOUDINARY_API_KEY: string;
@@ -33,10 +34,9 @@ const loadEnvVariables = (): EnvConfig => {
     "JWT_ACCESS_SECRET",
     "JWT_REFRESH_SECRET",
     "JWT_REFRESH_EXPIRES_IN",
-    "BCRYPT_SALT_ROUND",
-
-    "SUPER_ADMIN_EMAIL",
-    "SUPER_ADMIN_PASSWORD",
+    "ADMIN_NAME",
+    "ADMIN_EMAIL",
+    "ADMIN_PASSWORD",
 
     "CLOUDINARY_CLOUD_NAME",
     "CLOUDINARY_API_KEY",
@@ -47,9 +47,16 @@ const loadEnvVariables = (): EnvConfig => {
 
   requiredEnvVariables.forEach((key) => {
     if (!process.env[key]) {
-      throw new Error(`Missing require environment variable ${key}`);
+      throw new Error(`Missing required environment variable: ${key}`);
     }
   });
+
+  const bcryptSaltRounds = process.env.BCRYPT_SALT_ROUNDS ?? process.env.BCRYPT_SALT_ROUND;
+  if (!bcryptSaltRounds) {
+    throw new Error(
+      "Missing required environment variable: BCRYPT_SALT_ROUNDS (or legacy BCRYPT_SALT_ROUND)",
+    );
+  }
 
   return {
     PORT: process.env.PORT as string,
@@ -60,9 +67,10 @@ const loadEnvVariables = (): EnvConfig => {
     JWT_ACCESS_EXPIRES_IN: process.env.JWT_ACCESS_EXPIRES_IN as string,
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET as string,
     JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN as string,
-    BCRYPT_SALT_ROUND: process.env.BCRYPT_SALT_ROUND as string,
-    SUPER_ADMIN_EMAIL: process.env.SUPER_ADMIN_EMAIL as string,
-    SUPER_ADMIN_PASSWORD: process.env.SUPER_ADMIN_PASSWORD as string,
+    BCRYPT_SALT_ROUNDS: bcryptSaltRounds,
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL as string,
+    ADMIN_NAME: process.env.ADMIN_NAME as string,
+    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD as string,
     CLOUDINARY: {
       CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME as string,
       CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY as string,
