@@ -34,6 +34,7 @@ const loadEnvVariables = (): EnvConfig => {
     "JWT_ACCESS_SECRET",
     "JWT_REFRESH_SECRET",
     "JWT_REFRESH_EXPIRES_IN",
+    "BCRYPT_SALT_ROUNDS",
     "ADMIN_NAME",
     "ADMIN_EMAIL",
     "ADMIN_PASSWORD",
@@ -51,13 +52,6 @@ const loadEnvVariables = (): EnvConfig => {
     }
   });
 
-  const bcryptSaltRounds = process.env.BCRYPT_SALT_ROUNDS ?? process.env.BCRYPT_SALT_ROUND;
-  if (!bcryptSaltRounds) {
-    throw new Error(
-      "Missing required environment variable: BCRYPT_SALT_ROUNDS (or legacy BCRYPT_SALT_ROUND)",
-    );
-  }
-
   return {
     PORT: process.env.PORT as string,
     DATABASE_URL: process.env.DATABASE_URL as string,
@@ -67,7 +61,7 @@ const loadEnvVariables = (): EnvConfig => {
     JWT_ACCESS_EXPIRES_IN: process.env.JWT_ACCESS_EXPIRES_IN as string,
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET as string,
     JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN as string,
-    BCRYPT_SALT_ROUNDS: bcryptSaltRounds,
+    BCRYPT_SALT_ROUNDS: process.env.BCRYPT_SALT_ROUNDS as string,
     ADMIN_EMAIL: process.env.ADMIN_EMAIL as string,
     ADMIN_NAME: process.env.ADMIN_NAME as string,
     ADMIN_PASSWORD: process.env.ADMIN_PASSWORD as string,
