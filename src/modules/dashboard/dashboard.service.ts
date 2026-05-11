@@ -1,4 +1,4 @@
-import { CACHE_KEYS, CACHE_TTL } from "../../constants/cacheKeys.constant";
+import { CACHE_KEYS, CACHE_TTL } from "../../constants/cacheKeys";
 import { cacheService } from "../../services/cache.service";
 import { Analytics } from "../analytics/analytics.model";
 import { User } from "../user/user.model";
