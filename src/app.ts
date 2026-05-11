@@ -2,12 +2,12 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Application, NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+import redisClient from "./config/redis.config";
 import { httpMessages } from "./constants/httpMessages";
 import { globalErrorHandler } from "./middleware/globalErrorHandler.middleware";
 import { notFound } from "./middleware/notFound.middleware";
 import { v1Router } from "./routes";
 import { sendResponse } from "./utils/sendResponse";
-import redisClient from "./config/redis.config";
 
 const app: Application = express();
 const allowedOrigins = ["http://localhost:3000"];
@@ -59,6 +59,7 @@ app.get("/test-cache", async (req, res) => {
   const value = await redisClient.get("test");
 
   res.json({
+    success: true,
     message: "Cache working",
     value,
   });
