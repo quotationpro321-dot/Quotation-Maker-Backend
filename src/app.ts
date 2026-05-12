@@ -10,7 +10,7 @@ import { v1Router } from "./routes";
 import { sendResponse } from "./utils/sendResponse";
 
 const app: Application = express();
-const allowedOrigins = ["http://localhost:3000"];
+const allowedOrigins = ["http://localhost:3000", "https://alsama-dashboard.vercel.app"];
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
