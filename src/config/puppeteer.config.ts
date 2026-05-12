@@ -42,5 +42,6 @@ export const DEFAULT_PDF_OPTIONS: PDFOptions = {
 
 export const PDF_GENERATION_CONFIG = {
   timeout: 60000,
-  waitUntil: "networkidle0" as const,
+  // setContent() only allows "load" | "domcontentloaded" in puppeteer-core v24+ types
+  waitUntil: "load" as const,
 };
