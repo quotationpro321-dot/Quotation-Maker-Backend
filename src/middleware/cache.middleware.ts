@@ -16,7 +16,7 @@ const normalizeQuery = (query: Request["query"]): string => {
 };
 
 const buildCacheKey = (req: Request, keyPrefix: string): string => {
-  const userId = req.user?.id;
+  const userId = req.user?.userId;
   const scope = userId ? `user:${userId}` : "public";
   const query = normalizeQuery(req.query);
   return `${keyPrefix}:${scope}:${req.path}:${query}`;

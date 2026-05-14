@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-extraneous-class */
-/* eslint-disable no-console */
 import puppeteer, { Browser, Page } from "puppeteer-core";
 import {
   DEFAULT_PDF_OPTIONS,

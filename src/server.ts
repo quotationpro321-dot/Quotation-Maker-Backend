@@ -2,8 +2,8 @@ import { Server } from "http";
 import app from "./app";
 import { connectDB } from "./config/db";
 import { envVars } from "./config/env";
-import { seedSuperAdmin } from "./utils/seedAdmin";
-import { connectRedis } from "./config/redis.config";
+import redisClient, { connectRedis } from "./config/redis.config";
+import { seedAdmin } from "./utils/seedAdmin";
 
 let server: Server;
 
@@ -29,7 +29,7 @@ const startServer = async () => {
 
 (async () => {
   await startServer();
-  await seedSuperAdmin();
+  await seedAdmin();
 })();
 
 process.on("unhandledRejection", (err) => {
@@ -64,8 +64,10 @@ process.on("SIGTERM", (err) => {
 
 process.on("SIGINT", (err) => {
   console.log(`SIGINT signal received... server shutting down...`, err);
+  
   if (server) {
-    server.close(() => {
+    server.close(async () => {
+      await redisClient.quit();
       process.exit(1);
     });
   }

@@ -1,14 +1,14 @@
 import { envVars } from "../config/env";
 import { User } from "../modules/user/user.model";
-import { IUser, Role } from "../modules/user/user.types";
+import { IUser, UserRole, UserStatus } from "../modules/user/user.types";
 
-export const seedSuperAdmin = async () => {
+export const seedAdmin = async () => {
   try {
-    const isAdminExist = await User.findOne({
-      email: envVars.SUPER_ADMIN_EMAIL,
+    const existingAdmin = await User.findOne({
+      email: envVars.ADMIN_EMAIL,
     });
 
-    if (isAdminExist) {
+    if (existingAdmin) {
       console.log("Admin Already Exists!");
       return;
     }
@@ -16,10 +16,12 @@ export const seedSuperAdmin = async () => {
     console.log("Trying to create  Admin...");
 
     const payload: IUser = {
-      name: "Super Admin",
-      role: Role.SUPER_ADMIN,
-      email: envVars.SUPER_ADMIN_EMAIL,
-      password: envVars.SUPER_ADMIN_PASSWORD,
+      userId: envVars.ADMIN_NAME + envVars.ADMIN_EMAIL + UserRole.ADMIN,
+      name: envVars.ADMIN_NAME,
+      role: UserRole.ADMIN,
+      email: envVars.ADMIN_EMAIL,
+      password: envVars.ADMIN_PASSWORD,
+      status: UserStatus.ACTIVE,
     };
 
     const admin = await User.create(payload);

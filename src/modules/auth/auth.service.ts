@@ -1,10 +1,14 @@
+import crypto from "crypto";
 import { Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { CACHE_KEYS } from "../../constants/cacheKeys.constant";
+import { envVars } from "../../config/env";
+import { CACHE_KEYS } from "../../constants/cacheKeys";
+import { emailService } from "../../services/email.service";
 import { cacheService } from "../../services/cache.service";
 import AppError from "../../utils/AppError";
 import { setAuthCookie } from "../../utils/setCookie";
-import { createNewAccessTokenWithRefreshToken, createUsersToken } from "../../utils/userTokens";
+import { createNewAccessTokenWithRefreshToken, createUserAuthTokens } from "../../utils/userTokens";
+import { assertUserCanRequestPasswordReset } from "./assertUserCanRequestPasswordReset";
 import { User } from "../user/user.model";
 import { IUser } from "../user/user.types";
 
@@ -20,18 +24,16 @@ export const authService = {
 
     const cacheKey = CACHE_KEYS.USER_BY_EMAIL(email as string);
 
-    let isUserExist = await cacheService.get<IUser>(cacheKey);
+    let cachedUser = await cacheService.get<IUser>(cacheKey);
 
-    if (!isUserExist) {
-      // 2. DB fallback
-      isUserExist = await User.findOne({ email });
+    if (!cachedUser) {
+      cachedUser = await User.findOne({ email });
 
-      if (!isUserExist) {
+      if (!cachedUser) {
         throw new AppError(StatusCodes.BAD_REQUEST, "Email does not exist");
       }
 
-      // 3. Cache it (short TTL for auth)
-      await cacheService.set(cacheKey, isUserExist, 60);
+      await cacheService.set(cacheKey, cachedUser, 60);
     }
 
     const user = await User.findOne({ email });
@@ -43,7 +45,7 @@ export const authService = {
       throw new AppError(StatusCodes.BAD_REQUEST, "Invalid Password");
     }
 
-    const { accessToken, refreshToken } = createUsersToken(isUserExist);
+    const { accessToken, refreshToken } = createUserAuthTokens(cachedUser);
     setAuthCookie(res, {
       accessToken,
       refreshToken,
@@ -54,5 +56,128 @@ export const authService = {
       refreshToken,
       user,
     };
+  },
+
+  forgotPassword: async (payload: { email: string }) => {
+    const email = payload.email.trim().toLowerCase();
+    const user = await User.findOne({ email });
+
+    assertUserCanRequestPasswordReset(user);
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
+    const expiresAt = new Date(Date.now() + envVars.RESET_PASSWORD_EXPIRES_MINUTES * 60 * 1000);
+
+    await User.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          passwordResetTokenHash: resetTokenHash,
+          passwordResetExpiresAt: expiresAt,
+          passwordResetUsedAt: null,
+        },
+      },
+    );
+
+    const resetLink = `${envVars.FRONTEND_URL}/auth/reset-password?code=${resetToken}`;
+
+    const result = await emailService.sendPasswordResetEmail({
+      to: email,
+      recipientName: user.name,
+      resetCode: resetToken,
+      resetLink,
+      expiryMinutes: envVars.RESET_PASSWORD_EXPIRES_MINUTES,
+    });
+
+    if (!result.success) {
+      await User.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            passwordResetTokenHash: null,
+            passwordResetExpiresAt: null,
+            passwordResetUsedAt: null,
+          },
+        },
+      );
+      const detail =
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? String((result.error as { message: unknown }).message)
+          : "";
+      throw new AppError(
+        StatusCodes.SERVICE_UNAVAILABLE,
+        detail ? `Failed to send email: ${detail}` : "Failed to send email",
+      );
+    }
+  },
+
+  /**
+   * Read-only check for the reset link from email. Does not consume the token.
+   * Frontend uses this to show either the password form or the "token expired" UI.
+   */
+  validateResetCode: async (code: string) => {
+    const trimmed = code.trim();
+    if (!trimmed) {
+      return { valid: false as const };
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(trimmed).digest("hex");
+    const user = await User.findOne({ passwordResetTokenHash: tokenHash });
+
+    if (!user) {
+      return { valid: false as const };
+    }
+    if (user.passwordResetUsedAt) {
+      return { valid: false as const };
+    }
+    if (!user.passwordResetExpiresAt || user.passwordResetExpiresAt.getTime() <= Date.now()) {
+      return { valid: false as const };
+    }
+
+    return { valid: true as const };
+  },
+
+  resetPassword: async (payload: {
+    code: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) => {
+    const { code, newPassword } = payload;
+    const tokenHash = crypto.createHash("sha256").update(code).digest("hex");
+    const user = await User.findOne({ passwordResetTokenHash: tokenHash });
+
+    if (!user) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Invalid reset code.");
+    }
+
+    if (user.passwordResetUsedAt) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "This reset code has already been used.");
+    }
+
+    if (!user.passwordResetExpiresAt || user.passwordResetExpiresAt.getTime() <= Date.now()) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Reset code has expired.");
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        _id: user._id,
+        passwordResetTokenHash: tokenHash,
+        passwordResetUsedAt: null,
+        passwordResetExpiresAt: { $gt: new Date() },
+      },
+      {
+        password: newPassword,
+        passwordResetUsedAt: new Date(),
+        passwordResetTokenHash: null,
+        passwordResetExpiresAt: null,
+      },
+      { new: true },
+    );
+
+    if (!updatedUser) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Invalid or expired reset code.");
+    }
+
+    await cacheService.del(CACHE_KEYS.USER_BY_EMAIL(updatedUser.email));
   },
 };
