@@ -21,6 +21,16 @@ interface EnvConfig {
   };
   PDF_SHIFT_API_KEY: string;
   RESEND_API_KEY: string;
+  FRONTEND_URL: string;
+  RESET_PASSWORD_EXPIRES_MINUTES: number;
+  FORGOT_PASSWORD_RATE_LIMIT_WINDOW_SECONDS: number;
+  FORGOT_PASSWORD_RATE_LIMIT_MAX_REQUESTS: number;
+  /**
+   * Mailbox part of the Resend `from` header (no display name).
+   * Default `onboarding@resend.dev` is Resend's sandbox sender; replace with `noreply@yourdomain.com`
+   * once you verify your domain at https://resend.com/domains.
+   */
+  RESEND_FROM_ADDRESS: string;
 }
 
 const loadEnvVariables = (): EnvConfig => {
@@ -44,6 +54,8 @@ const loadEnvVariables = (): EnvConfig => {
     "CLOUDINARY_API_SECRET",
 
     "PDF_SHIFT_API_KEY",
+    "FRONTEND_URL",
+    "RESEND_API_KEY",
   ];
 
   requiredEnvVariables.forEach((key) => {
@@ -73,6 +85,15 @@ const loadEnvVariables = (): EnvConfig => {
     },
     PDF_SHIFT_API_KEY: process.env.PDF_SHIFT_API_KEY as string,
     RESEND_API_KEY: process.env.RESEND_API_KEY as string,
+    FRONTEND_URL: process.env.FRONTEND_URL as string,
+    RESET_PASSWORD_EXPIRES_MINUTES: Number(process.env.RESET_PASSWORD_EXPIRES_MINUTES ?? 15),
+    FORGOT_PASSWORD_RATE_LIMIT_WINDOW_SECONDS: Number(
+      process.env.FORGOT_PASSWORD_RATE_LIMIT_WINDOW_SECONDS ?? 300,
+    ),
+    FORGOT_PASSWORD_RATE_LIMIT_MAX_REQUESTS: Number(
+      process.env.FORGOT_PASSWORD_RATE_LIMIT_MAX_REQUESTS ?? 5,
+    ),
+    RESEND_FROM_ADDRESS: process.env.RESEND_FROM_ADDRESS?.trim() || "onboarding@resend.dev",
   };
 };
 

@@ -33,6 +33,29 @@ const generateUniqueFileName = (originalName: string): string => {
     : `${randomString}-${timestamp}-${fileName}`;
 };
 
+/**
+ * Stem for profile avatar `public_id` only — no trailing file extension.
+ * `generateUniqueFileName` turned e.g. `download.png` into `...-download-png.png`;
+ * combined with Cloudinary/folder delivery that produced URLs ending in `...png.png.png`.
+ */
+const generateProfileAvatarPublicStem = (originalName: string): string => {
+  let base = originalName.trim().toLowerCase();
+  for (let i = 0; i < 6; i++) {
+    const next = base.replace(/\.(jpe?g|png|gif|webp)$/i, "");
+    if (next === base) break;
+    base = next;
+  }
+  const stem = base
+    .replace(/\s+/g, "-")
+    .replace(/\.+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  const safe = stem.length > 0 ? stem.slice(0, 80) : "avatar";
+  const randomString = Math.random().toString(36).substring(2, 12);
+  return `${randomString}-${Date.now()}-${safe}`;
+};
+
 const performCloudinaryUploadWithRetry = async (
   buffer: Buffer,
   uploadOptions: any,
@@ -169,6 +192,27 @@ export const uploadImageToCloudinary = async (
   } catch (error: any) {
     console.error("❌ Cloudinary image upload failed:", error);
     throw error; // Re-throw the AppError from performCloudinaryUploadWithRetry
+  }
+};
+
+/** Dashboard user profile avatars (JPG/PNG/GIF, validated before call). */
+export const uploadProfileAvatarToCloudinary = async (
+  buffer: Buffer,
+  originalName: string,
+): Promise<UploadApiResponse> => {
+  try {
+    const stem = generateProfileAvatarPublicStem(originalName);
+    const uploadOptions = {
+      resource_type: "image" as const,
+      public_id: `profile-avatars/${stem}`,
+      folder: "quotation-maker",
+      timeout: 600000,
+    };
+
+    return await performCloudinaryUploadWithRetry(buffer, uploadOptions, "image");
+  } catch (error: any) {
+    console.error("❌ Cloudinary profile avatar upload failed:", error);
+    throw error;
   }
 };
 

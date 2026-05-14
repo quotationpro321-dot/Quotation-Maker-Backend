@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema<IUser, Model<IUser>, IMongooseMethod>(
     userId: {type: String, unique: true, required: true},
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    emailVerified: { type: Boolean, default: true },
     password: { type: String, required: true },
     role: {
       type: String,
@@ -23,9 +24,13 @@ const userSchema = new mongoose.Schema<IUser, Model<IUser>, IMongooseMethod>(
       required: true,
     },
     passwordChangedAt: { type: Date },
+    passwordResetTokenHash: { type: String, default: null },
+    passwordResetExpiresAt: { type: Date, default: null },
+    passwordResetUsedAt: { type: Date, default: null },
     profilePhotoUrl: {
       type: String,
     },
+    profilePhotoPublicId: { type: String, default: undefined },
   },
   {
     versionKey: false,
