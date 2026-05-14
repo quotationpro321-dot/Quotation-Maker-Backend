@@ -42,6 +42,11 @@ export const createNewAccessTokenWithRefreshToken = async (refreshToken: string)
     throw new AppError(StatusCodes.BAD_REQUEST, "User does not exist");
   }
 
+  const tokenIssuedAtMs = Number(verifiedRefreshToken.iat ?? 0) * 1000;
+  if (userRecord.passwordChangedAt && tokenIssuedAtMs < userRecord.passwordChangedAt.getTime()) {
+    throw new AppError(StatusCodes.UNAUTHORIZED, "Session expired. Please log in again.");
+  }
+
   const jwtPayload = {
     userId: String(userRecord._id),
     email: userRecord.email,

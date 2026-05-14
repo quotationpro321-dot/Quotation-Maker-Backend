@@ -13,7 +13,7 @@
     "lint": "eslint ./src",
     "clean": "rm -rf dist node_modules",
     "lint:fix": "eslint ./src --fix",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run src"
   },
   "dependencies": {
     "@sparticuz/chromium": "^148.0.0",
@@ -53,7 +53,8 @@
     "prettier": "3.8.3",
     "ts-node-dev": "^2.0.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.1"
+    "typescript-eslint": "^8.59.1",
+    "vitest": "^4.1.6"
   },
   "pnpm": {
     "overrides": {

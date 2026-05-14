@@ -2,6 +2,24 @@
 import multer from "multer";
 import AppError from "../utils/AppError";
 
+const PROFILE_AVATAR_MAX_BYTES = 1024 * 1024; // 1MB
+const PROFILE_AVATAR_MIMES = new Set(["image/jpeg", "image/png", "image/gif"]);
+
+export const multerProfileAvatar = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: PROFILE_AVATAR_MAX_BYTES,
+    files: 1,
+  },
+  fileFilter: (_req, file, cb) => {
+    if (PROFILE_AVATAR_MIMES.has(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new AppError(400, "Invalid file type. Only JPG, PNG, or GIF images are allowed."));
+    }
+  },
+});
+
 export const multerMemoryUpload = multer({
   storage: multer.memoryStorage(),
   limits: {
