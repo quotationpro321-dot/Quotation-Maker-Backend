@@ -30,7 +30,7 @@ interface EnvConfig {
    * Default `onboarding@resend.dev` is Resend's sandbox sender; replace with `noreply@yourdomain.com`
    * once you verify your domain at https://resend.com/domains.
    */
-  RESEND_FROM_ADDRESS: string;
+  RESEND_FROM_EMAIL: string;
 }
 
 const loadEnvVariables = (): EnvConfig => {
@@ -56,6 +56,7 @@ const loadEnvVariables = (): EnvConfig => {
     "PDF_SHIFT_API_KEY",
     "FRONTEND_URL",
     "RESEND_API_KEY",
+    "RESEND_FROM_EMAIL",
   ];
 
   requiredEnvVariables.forEach((key) => {
@@ -63,7 +64,6 @@ const loadEnvVariables = (): EnvConfig => {
       throw new Error(`Missing required environment variable: ${key}`);
     }
   });
-
 
   return {
     PORT: process.env.PORT as string,
@@ -93,7 +93,7 @@ const loadEnvVariables = (): EnvConfig => {
     FORGOT_PASSWORD_RATE_LIMIT_MAX_REQUESTS: Number(
       process.env.FORGOT_PASSWORD_RATE_LIMIT_MAX_REQUESTS ?? 5,
     ),
-    RESEND_FROM_ADDRESS: process.env.RESEND_FROM_ADDRESS?.trim() || "onboarding@resend.dev",
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL?.trim() || "onboarding@resend.dev",
   };
 };
 

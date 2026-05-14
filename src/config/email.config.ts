@@ -9,7 +9,7 @@ if (!envVars.RESEND_API_KEY) {
 export const resend = new Resend(envVars.RESEND_API_KEY);
 
 export const EMAIL_CONFIG = {
-  from: `${COMPANY_INFO.name} <${envVars.RESEND_FROM_ADDRESS}>`,
+  from: `${COMPANY_INFO.name} <${envVars.RESEND_FROM_EMAIL}>`,
   adminEmail: COMPANY_INFO.email,
   replyTo: COMPANY_INFO.email,
 
