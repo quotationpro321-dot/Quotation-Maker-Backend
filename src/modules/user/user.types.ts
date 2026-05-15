@@ -26,4 +26,8 @@ export interface IUser {
   passwordResetTokenHash?: string | null;
   passwordResetExpiresAt?: Date | null;
   passwordResetUsedAt?: Date | null;
+  /** Set when status becomes `deleted` (soft delete). */
+  deletedAt?: Date | null;
+  /** Set after retention period; PII is cleared but `_id` is kept for references. */
+  anonymizedAt?: Date | null;
 }

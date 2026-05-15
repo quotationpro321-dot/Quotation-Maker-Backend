@@ -5,6 +5,7 @@ import { User } from "../modules/user/user.model";
 import { generateToken, verifyToken } from "./jwt";
 import { JwtPayload } from "jsonwebtoken";
 import { Types } from "mongoose";
+import { assertUserCanAuthenticate } from "../modules/auth/assertUserCanAuthenticate";
 import { IUser } from "../modules/user/user.types";
 
 export const createUserAuthTokens = (user: Partial<IUser> & { _id?: Types.ObjectId }) => {
@@ -41,6 +42,8 @@ export const createNewAccessTokenWithRefreshToken = async (refreshToken: string)
   if (!userRecord) {
     throw new AppError(StatusCodes.BAD_REQUEST, "User does not exist");
   }
+
+  assertUserCanAuthenticate(userRecord);
 
   const tokenIssuedAtMs = Number(verifiedRefreshToken.iat ?? 0) * 1000;
   if (userRecord.passwordChangedAt && tokenIssuedAtMs < userRecord.passwordChangedAt.getTime()) {

@@ -31,6 +31,8 @@ interface EnvConfig {
    * once you verify your domain at https://resend.com/domains.
    */
   RESEND_FROM_EMAIL: string;
+  /** Days after soft-delete before PII is anonymized automatically. */
+  USER_ANONYMIZE_AFTER_DAYS: number;
 }
 
 const loadEnvVariables = (): EnvConfig => {
@@ -94,6 +96,10 @@ const loadEnvVariables = (): EnvConfig => {
       process.env.FORGOT_PASSWORD_RATE_LIMIT_MAX_REQUESTS ?? 5,
     ),
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL?.trim() || "onboarding@resend.dev",
+    USER_ANONYMIZE_AFTER_DAYS: Math.max(
+      1,
+      Number(process.env.USER_ANONYMIZE_AFTER_DAYS ?? 60),
+    ),
   };
 };
 
