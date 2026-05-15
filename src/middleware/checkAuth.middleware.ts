@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../config/env";
+import { assertUserCanAuthenticate } from "../modules/auth/assertUserCanAuthenticate";
 import { User } from "../modules/user/user.model";
 import type { UserPayload } from "../types";
 import AppError from "../utils/AppError";
@@ -27,6 +28,8 @@ export const checkAuth =
       if (!userRecord) {
         throw new AppError(StatusCodes.BAD_REQUEST, "User does not exist");
       }
+
+      assertUserCanAuthenticate(userRecord);
 
       if (!authRoles.includes(String(verifiedToken.role))) {
         throw new AppError(403, "You are not permitted to access this resource");

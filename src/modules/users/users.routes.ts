@@ -52,6 +52,13 @@ router.patch(
 );
 
 router.post(
+  "/:id/restore",
+  checkAuth(UserRole.ADMIN),
+  validateRequest(userIdParamsSchema, "params"),
+  usersController.restore,
+);
+
+router.post(
   "/:id/avatar",
   checkAuth(UserRole.ADMIN),
   validateRequest(userIdParamsSchema, "params"),
