@@ -2,6 +2,8 @@ import { Types } from "mongoose";
 import { StatusCodes } from "http-status-codes";
 
 import QueryBuilder from "../../builder/QueryBuilder";
+import { CACHE_KEYS } from "../../constants/cacheKeys";
+import { cacheService } from "../../services/cache.service";
 import { uploadProfileAvatarForUser } from "../../services/profileAvatar.service";
 import AppError from "../../utils/AppError";
 import { User } from "../user/user.model";
@@ -47,6 +49,19 @@ function buildUserId(name: string, email: string, role: string) {
   return `${name.trim()}${email.trim().toLowerCase()}${role}`;
 }
 
+async function invalidateUserEmailCache(email: string) {
+  await cacheService.del(CACHE_KEYS.USER_BY_EMAIL(email.trim().toLowerCase()));
+}
+
+function applySoftDelete(user: InstanceType<typeof User>) {
+  user.status = UserStatus.DELETED;
+  user.deletedAt = new Date();
+}
+
+function isRestorableDeletedUser(user: { status: string; anonymizedAt?: Date | null }) {
+  return user.status === UserStatus.DELETED && !user.anonymizedAt;
+}
+
 /** Maps frontend list params to QueryBuilder shape (`searchTerm`, `sort`, `fields`). */
 function toBuilderQuery(query: TListUsersQuery): Record<string, unknown> {
   const { search, sortBy, sortOrder, fields, ...rest } = query;
@@ -65,6 +80,8 @@ export const usersService = {
     const baseFilter: Record<string, unknown> = {};
     if (!query.status) {
       baseFilter.status = { $ne: UserStatus.DELETED };
+    } else if (query.status === UserStatus.DELETED) {
+      baseFilter.anonymizedAt = null;
     }
     if (excludeUserId && Types.ObjectId.isValid(excludeUserId)) {
       baseFilter._id = { $ne: new Types.ObjectId(excludeUserId) };
@@ -116,8 +133,37 @@ export const usersService = {
   create: async (body: TCreateUserBody) => {
     const email = body.email.trim().toLowerCase();
     const existing = await User.findOne({ email });
+
     if (existing) {
-      throw new AppError(StatusCodes.CONFLICT, "A user with this email already exists.");
+      if (!isRestorableDeletedUser(existing)) {
+        throw new AppError(StatusCodes.CONFLICT, "A user with this email already exists.");
+      }
+
+      const userId = buildUserId(body.name, email, body.role);
+      const duplicateUserId = await User.findOne({ userId, _id: { $ne: existing._id } });
+      if (duplicateUserId) {
+        throw new AppError(
+          StatusCodes.CONFLICT,
+          "Could not generate a unique user id. Try a different email.",
+        );
+      }
+
+      const status =
+        body.status === UserStatus.DELETED ? UserStatus.ACTIVE : body.status;
+
+      existing.name = body.name.trim();
+      existing.userId = userId;
+      existing.role = body.role;
+      existing.status = status;
+      existing.password = body.password;
+      existing.emailVerified = body.emailVerified ?? true;
+      existing.deletedAt = null;
+      existing.anonymizedAt = null;
+
+      await existing.save();
+      await invalidateUserEmailCache(email);
+
+      return { ...adminUserDto(existing), restored: true as const };
     }
 
     const userId = buildUserId(body.name, email, body.role);
@@ -137,6 +183,29 @@ export const usersService = {
     });
 
     return adminUserDto(created);
+  },
+
+  restore: async (id: string) => {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Invalid user id.");
+    }
+
+    const existing = await User.findById(id);
+    if (!existing || !isRestorableDeletedUser(existing)) {
+      throw new AppError(
+        StatusCodes.NOT_FOUND,
+        existing?.anonymizedAt
+          ? "This account was permanently anonymized and cannot be restored."
+          : "Removed user not found.",
+      );
+    }
+
+    existing.status = UserStatus.ACTIVE;
+    existing.deletedAt = null;
+    await existing.save();
+    await invalidateUserEmailCache(existing.email);
+
+    return adminUserDto(existing);
   },
 
   update: async (id: string, body: TUpdateUserBody, actorUserId: string) => {
@@ -204,8 +273,9 @@ export const usersService = {
         continue;
       }
 
-      existing.status = UserStatus.DELETED;
+      applySoftDelete(existing);
       await existing.save();
+      await invalidateUserEmailCache(existing.email);
       deleted.push(id);
     }
 
@@ -233,8 +303,9 @@ export const usersService = {
       throw new AppError(StatusCodes.NOT_FOUND, "User not found.");
     }
 
-    existing.status = UserStatus.DELETED;
+    applySoftDelete(existing);
     await existing.save();
+    await invalidateUserEmailCache(existing.email);
 
     return { _id: String(existing._id) };
   },

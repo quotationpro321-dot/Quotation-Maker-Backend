@@ -31,6 +31,8 @@ const userSchema = new mongoose.Schema<IUser, Model<IUser>, IMongooseMethod>(
       type: String,
     },
     profilePhotoPublicId: { type: String, default: undefined },
+    deletedAt: { type: Date, default: null },
+    anonymizedAt: { type: Date, default: null },
   },
   {
     versionKey: false,

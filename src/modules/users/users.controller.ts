@@ -36,10 +36,22 @@ export const usersController = {
 
   create: catchAsync(async (req: Request, res: Response) => {
     const data = await usersService.create(req.body);
+    const restored = typeof data === "object" && data !== null && "restored" in data && data.restored;
     sendResponse(res, {
       statusCode: StatusCodes.CREATED,
       success: true,
-      message: "User created successfully",
+      message: restored ? "User restored successfully" : "User created successfully",
+      data,
+    });
+  }),
+
+  restore: catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.validatedParams as { id: string };
+    const data = await usersService.restore(id);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "User restored successfully",
       data,
     });
   }),

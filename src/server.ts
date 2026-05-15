@@ -3,6 +3,7 @@ import app from "./app";
 import { connectDB } from "./config/db";
 import { envVars } from "./config/env";
 import redisClient, { connectRedis } from "./config/redis.config";
+import { startDeletedUserAnonymizeScheduler } from "./jobs/deletedUserAnonymize.scheduler";
 import { seedAdmin } from "./utils/seedAdmin";
 
 let server: Server;
@@ -22,6 +23,8 @@ const startServer = async () => {
 
       console.log(`✅ Server timeout configured: ${server.timeout / 1000}s`);
     }
+
+    startDeletedUserAnonymizeScheduler();
   } catch (error) {
     console.log(error);
   }
