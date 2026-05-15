@@ -1,6 +1,6 @@
 import { CACHE_KEYS, CACHE_TTL } from "../../constants/cacheKeys";
 import { cacheWrapperService } from "../../services/cacheWrapper.service";
-import QueryBuilder from "../../utils/queryBuilder";
+import QueryBuilder from "../../builder/QueryBuilder";
 import { normalizeReferrer } from "../../utils/normalizeReferrer";
 import { Analytics } from "./analytics.model";
 import { IAnalytics } from "./analytics.types";

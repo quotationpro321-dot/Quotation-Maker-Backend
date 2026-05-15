@@ -2,13 +2,9 @@ import { Request } from "express";
 import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
 
-import {
-  cloudinaryUpload,
-  deleteImageFromCLoudinary,
-  uploadProfileAvatarToCloudinary,
-} from "../../config/cloudinary.config";
 import { CACHE_KEYS, CACHE_TTL } from "../../constants/cacheKeys";
 import { cacheService } from "../../services/cache.service";
+import { uploadProfileAvatarForUser } from "../../services/profileAvatar.service";
 import AppError from "../../utils/AppError";
 import { Analytics } from "../analytics/analytics.model";
 import { User } from "../user/user.model";
@@ -154,37 +150,11 @@ export const dashboardService = {
     }
 
     const file = req.file;
-    if (!file?.buffer) {
+    if (!file) {
       throw new AppError(StatusCodes.BAD_REQUEST, "Avatar image is required.");
     }
 
-    const existing = await User.findById(userId);
-    if (!existing) {
-      throw new AppError(StatusCodes.NOT_FOUND, "User not found.");
-    }
-
-    const upload = await uploadProfileAvatarToCloudinary(file.buffer, file.originalname);
-
-    const previousPublicId = existing.profilePhotoPublicId;
-    if (previousPublicId) {
-      try {
-        await cloudinaryUpload.uploader.destroy(previousPublicId);
-      } catch {
-        /* best-effort cleanup */
-      }
-    } else if (existing.profilePhotoUrl) {
-      try {
-        await deleteImageFromCLoudinary(existing.profilePhotoUrl);
-      } catch {
-        /* URL may not be Cloudinary or regex may not match */
-      }
-    }
-
-    existing.profilePhotoUrl = upload.secure_url;
-    existing.profilePhotoPublicId = upload.public_id;
-    await existing.save();
-
-    await cacheService.del(CACHE_KEYS.USER_BY_EMAIL(existing.email.toLowerCase()));
+    await uploadProfileAvatarForUser(userId, file);
 
     const refreshed = await User.findById(userId).lean();
     if (!refreshed) {
