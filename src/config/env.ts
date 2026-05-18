@@ -25,6 +25,8 @@ interface EnvConfig {
   RESET_PASSWORD_EXPIRES_MINUTES: number;
   FORGOT_PASSWORD_RATE_LIMIT_WINDOW_SECONDS: number;
   FORGOT_PASSWORD_RATE_LIMIT_MAX_REQUESTS: number;
+  FLIGHT_CONVERTER_RATE_LIMIT_WINDOW_SECONDS: number;
+  FLIGHT_CONVERTER_RATE_LIMIT_MAX_REQUESTS: number;
   /**
    * Mailbox part of the Resend `from` header (no display name).
    * Default `onboarding@resend.dev` is Resend's sandbox sender; replace with `noreply@yourdomain.com`
@@ -94,6 +96,12 @@ const loadEnvVariables = (): EnvConfig => {
     ),
     FORGOT_PASSWORD_RATE_LIMIT_MAX_REQUESTS: Number(
       process.env.FORGOT_PASSWORD_RATE_LIMIT_MAX_REQUESTS ?? 5,
+    ),
+    FLIGHT_CONVERTER_RATE_LIMIT_WINDOW_SECONDS: Number(
+      process.env.FLIGHT_CONVERTER_RATE_LIMIT_WINDOW_SECONDS ?? 60,
+    ),
+    FLIGHT_CONVERTER_RATE_LIMIT_MAX_REQUESTS: Number(
+      process.env.FLIGHT_CONVERTER_RATE_LIMIT_MAX_REQUESTS ?? 30,
     ),
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL?.trim() || "onboarding@resend.dev",
     USER_ANONYMIZE_AFTER_DAYS: Math.max(

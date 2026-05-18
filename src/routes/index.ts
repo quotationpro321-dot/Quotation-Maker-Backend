@@ -2,6 +2,7 @@ import { Router } from "express";
 import { AuthRoutes } from "../modules/auth/auth.routes";
 import { DashboardRoutes } from "../modules/dashboard/dashboard.routes";
 import { AnalyticsRoutes } from "../modules/analytics/analytics.routes";
+import { FlightConverterRoutes } from "../modules/flight-converter/flight-converter.routes";
 import { UsersRoutes } from "../modules/users/users.routes";
 
 export const v1Router = Router();
@@ -11,6 +12,7 @@ const moduleRoutes = [
   { path: "/dashboard", route: DashboardRoutes },
   { path: "/analytics", route: AnalyticsRoutes },
   { path: "/users", route: UsersRoutes },
+  { path: "/flight-converter", route: FlightConverterRoutes },
 ];
 
 moduleRoutes.forEach((route) => {
