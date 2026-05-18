@@ -13,7 +13,8 @@
     "lint": "eslint ./src",
     "clean": "rm -rf dist node_modules",
     "lint:fix": "eslint ./src --fix",
-    "test": "vitest run src"
+    "test": "vitest run src",
+    "seed:flight-ref": "ts-node-dev --transpile-only src/scripts/seedFlightReferenceData.ts"
   },
   "dependencies": {
     "@sparticuz/chromium": "^148.0.0",

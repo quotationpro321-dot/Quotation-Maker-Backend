@@ -1,0 +1,51 @@
+---
+alwaysApply: true
+---
+# Clean Code Standards
+
+Code must be **DRY**, **SOLID**, **clean**, and **modular**. Prefer maintenance effort over implementation speed (Max Kanat-Alexander).
+
+## Readability First
+
+- Clean code is easy to read, understand, and change.
+- Prefer **clarity over cleverness**. Humans read code more than computers.
+- Use **meaningful names** so intent is obvious without comments.
+- Avoid unnecessary comments. If logic needs explanation, improve naming or structure first. Comment only non-obvious *why* (trade-offs, constraints), not *what*.
+
+## Consistency
+
+- Use the **same syntax style** for similar tasks across the codebase.
+- Follow **one naming convention** per project:
+  - variables/functions → `camelCase`
+  - classes/types/components → `PascalCase`
+  - constants → `UPPER_SNAKE_CASE`
+- **Match existing project structure and formatting** (`src/modules/*`, controllers, services, routes, validation, utils). Mirror nearby files before inventing new patterns.
+
+## Design Principles
+
+- **Single Responsibility**: one function/class = one job. Do not merge unrelated concerns to “reuse” code.
+- **Single Source of Truth**: config and shared data live in one place; import/reference elsewhere—never duplicate magic values.
+- **DRY**: extract duplication, but not at the cost of unclear abstractions.
+- **SOLID**: favor small, focused units with clear dependencies and extension points.
+
+## Modularity & File Size
+
+- Split files when they grow beyond **~100–150 lines** or mix multiple responsibilities.
+- Keep modules cohesive (e.g. `*.controller.ts`, `*.service.ts`, `*.validation.ts` in the same feature folder).
+
+```typescript
+// ❌ Clever, hard to read
+const countVowels = (s: string) => (s.match(/[aeiou]/gi) || []).length;
+
+// ✅ Clear
+function countVowels(text: string): number {
+  const vowelRegex = /[aeiou]/gi;
+  const matches = text.match(vowelRegex) ?? [];
+  return matches.length;
+}
+```
+
+## Before Submitting
+
+- Would a teammate find files and names without a tour?
+- Is each change scoped, tested where applicable, and aligned with ESLint/Prettier and project conventions?
