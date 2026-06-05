@@ -16,7 +16,8 @@
     "test": "vitest run src",
     "seed:flight-ref": "ts-node-dev --transpile-only src/scripts/seedFlightReferenceData.ts",
     "seed:hotel-ref": "ts-node-dev --transpile-only src/scripts/seedHotelReferenceData.ts",
-    "seed:transfer-ref": "ts-node-dev --transpile-only src/scripts/seedTransferReferenceData.ts"
+    "seed:transfer-ref-one": "ts-node-dev --transpile-only src/scripts/seedTransferReferenceData.ts"
+    "seed:flight-ref-two": "ts-node-dev --transpile-only src/scripts/seedFlightReferenceData.ts"
   },
   "dependencies": {
     "@sparticuz/chromium": "^148.0.0",
