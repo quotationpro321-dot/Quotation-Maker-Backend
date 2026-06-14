@@ -19,6 +19,8 @@ export interface IUser {
   password: string;
   role: UserRole;
   status: UserStatus;
+  /** Optional WhatsApp contact shown on the user's quotation PDFs. */
+  whatsappNumber?: string | null;
   profilePhotoUrl?: string;
   /** Cloudinary `public_id` for deleting the previous avatar on replace. */
   profilePhotoPublicId?: string;

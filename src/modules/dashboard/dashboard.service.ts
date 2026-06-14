@@ -12,6 +12,8 @@ import type { IUser } from "../user/user.types";
 
 export type ProfileUpdatePayload = Pick<IUser, "name" | "email"> & {
   currentPassword?: string;
+  /** Optional; omit to keep current, send "" to clear. */
+  whatsappNumber?: string | null;
 };
 
 export type TUpdateMyProfileResult = {
@@ -25,6 +27,7 @@ function profileDto(user: {
   name: string;
   email: string;
   role: string;
+  whatsappNumber?: string | null;
   profilePhotoUrl?: string;
 }) {
   return {
@@ -33,6 +36,7 @@ function profileDto(user: {
     name: user.name,
     email: user.email,
     role: user.role,
+    whatsappNumber: user.whatsappNumber ?? null,
     profilePhotoUrl: user.profilePhotoUrl ?? null,
   };
 }
@@ -83,10 +87,17 @@ export const dashboardService = {
     const prevName = existing.name.trim();
     const previousEmail = existing.email.toLowerCase();
 
+    const whatsappProvided = body.whatsappNumber !== undefined;
+    const nextWhatsapp = whatsappProvided
+      ? body.whatsappNumber?.trim() || null
+      : (existing.whatsappNumber ?? null);
+    const prevWhatsapp = existing.whatsappNumber ?? null;
+
     const nameChanged = nextName !== prevName;
     const emailChanged = nextEmail !== previousEmail;
+    const whatsappChanged = whatsappProvided && nextWhatsapp !== prevWhatsapp;
 
-    if (!nameChanged && !emailChanged) {
+    if (!nameChanged && !emailChanged && !whatsappChanged) {
       return {
         profile: profileDto(existing),
         message: "Everything is already up to date.",
@@ -117,6 +128,9 @@ export const dashboardService = {
 
     existing.name = nextName;
     existing.email = nextEmail;
+    if (whatsappChanged) {
+      existing.whatsappNumber = nextWhatsapp;
+    }
 
     await existing.save();
 
@@ -128,14 +142,17 @@ export const dashboardService = {
       throw new AppError(StatusCodes.NOT_FOUND, "User not found.");
     }
 
-    let message: string;
-    if (nameChanged && emailChanged) {
-      message = "Your name and email were updated.";
-    } else if (nameChanged) {
-      message = "Your name was updated.";
-    } else {
-      message = "Your email was updated.";
-    }
+    const changedLabels = [
+      nameChanged ? "name" : null,
+      emailChanged ? "email" : null,
+      whatsappChanged ? "WhatsApp number" : null,
+    ].filter((label): label is string => label !== null);
+
+    const lastLabel = changedLabels[changedLabels.length - 1];
+    const message =
+      changedLabels.length === 1
+        ? `Your ${changedLabels[0]} was updated.`
+        : `Your ${changedLabels.slice(0, -1).join(", ")} and ${lastLabel} were updated.`;
 
     return {
       profile: profileDto(refreshed),
