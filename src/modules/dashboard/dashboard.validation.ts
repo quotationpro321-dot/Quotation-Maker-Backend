@@ -11,6 +11,12 @@ export const updateMyProfileZodSchema = z.object({
     .min(1, { message: "Name is required." })
     .max(120, { message: "Name is too long." }),
   email: z.string().trim().email({ message: "Invalid email address." }).max(100),
+  /** Optional WhatsApp contact for quotation PDFs; "" clears it. */
+  whatsappNumber: z
+    .string()
+    .trim()
+    .max(30, { message: "WhatsApp number is too long." })
+    .optional(),
   /** Required when changing email; verified server-side. */
   currentPassword: z.string().optional(),
 });
