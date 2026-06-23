@@ -2,6 +2,9 @@ export type THotelAreaDto = {
   id: string;
   slug: string;
   name: string;
+  calculatorType: "umrah" | "holiday";
+  sortOrder: number;
+  isActive: boolean;
 };
 
 export type THotelDto = {
@@ -13,4 +16,6 @@ export type THotelDto = {
   areaId: string;
   areaSlug: string;
   areaName: string;
+  sortOrder: number;
+  isActive: boolean;
 };

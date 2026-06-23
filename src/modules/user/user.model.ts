@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema<IUser, Model<IUser>, IMongooseMethod>(
       required: true,
     },
     whatsappNumber: { type: String, default: null },
+    consultantDesignation: { type: String, default: null },
     passwordChangedAt: { type: Date },
     passwordResetTokenHash: { type: String, default: null },
     passwordResetExpiresAt: { type: Date, default: null },

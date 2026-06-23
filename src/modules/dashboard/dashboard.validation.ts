@@ -1,6 +1,18 @@
 import z from "zod";
 
 import { loginZodSchema } from "../auth/auth.validation";
+import type { TAnalyticsPeriod } from "./dashboard-overview.types";
+
+const analyticsPeriodSchema = z.enum(["7d", "30d", "90d", "12m"] satisfies [
+  TAnalyticsPeriod,
+  ...TAnalyticsPeriod[],
+]);
+
+export const analyticsOverviewQuerySchema = z.object({
+  period: analyticsPeriodSchema.default("30d"),
+});
+
+export type TAnalyticsOverviewQuery = z.infer<typeof analyticsOverviewQuerySchema>;
 
 const newPasswordField = loginZodSchema.shape.password;
 
@@ -16,6 +28,12 @@ export const updateMyProfileZodSchema = z.object({
     .string()
     .trim()
     .max(30, { message: "WhatsApp number is too long." })
+    .optional(),
+  /** Optional job title for quotation PDFs; "" clears it. */
+  consultantDesignation: z
+    .string()
+    .trim()
+    .max(120, { message: "Designation is too long." })
     .optional(),
   /** Required when changing email; verified server-side. */
   currentPassword: z.string().optional(),
