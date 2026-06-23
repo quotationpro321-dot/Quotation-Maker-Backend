@@ -14,6 +14,7 @@ export type ProfileUpdatePayload = Pick<IUser, "name" | "email"> & {
   currentPassword?: string;
   /** Optional; omit to keep current, send "" to clear. */
   whatsappNumber?: string | null;
+  consultantDesignation?: string | null;
 };
 
 export type TUpdateMyProfileResult = {
@@ -28,6 +29,7 @@ function profileDto(user: {
   email: string;
   role: string;
   whatsappNumber?: string | null;
+  consultantDesignation?: string | null;
   profilePhotoUrl?: string;
 }) {
   return {
@@ -37,6 +39,7 @@ function profileDto(user: {
     email: user.email,
     role: user.role,
     whatsappNumber: user.whatsappNumber ?? null,
+    consultantDesignation: user.consultantDesignation ?? null,
     profilePhotoUrl: user.profilePhotoUrl ?? null,
   };
 }
@@ -93,11 +96,19 @@ export const dashboardService = {
       : (existing.whatsappNumber ?? null);
     const prevWhatsapp = existing.whatsappNumber ?? null;
 
+    const designationProvided = body.consultantDesignation !== undefined;
+    const nextDesignation = designationProvided
+      ? body.consultantDesignation?.trim() || null
+      : (existing.consultantDesignation ?? null);
+    const prevDesignation = existing.consultantDesignation ?? null;
+
     const nameChanged = nextName !== prevName;
     const emailChanged = nextEmail !== previousEmail;
     const whatsappChanged = whatsappProvided && nextWhatsapp !== prevWhatsapp;
+    const designationChanged =
+      designationProvided && nextDesignation !== prevDesignation;
 
-    if (!nameChanged && !emailChanged && !whatsappChanged) {
+    if (!nameChanged && !emailChanged && !whatsappChanged && !designationChanged) {
       return {
         profile: profileDto(existing),
         message: "Everything is already up to date.",
@@ -131,6 +142,9 @@ export const dashboardService = {
     if (whatsappChanged) {
       existing.whatsappNumber = nextWhatsapp;
     }
+    if (designationChanged) {
+      existing.consultantDesignation = nextDesignation;
+    }
 
     await existing.save();
 
@@ -146,6 +160,7 @@ export const dashboardService = {
       nameChanged ? "name" : null,
       emailChanged ? "email" : null,
       whatsappChanged ? "WhatsApp number" : null,
+      designationChanged ? "designation" : null,
     ].filter((label): label is string => label !== null);
 
     const lastLabel = changedLabels[changedLabels.length - 1];

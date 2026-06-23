@@ -5,6 +5,7 @@ import { AnalyticsRoutes } from "../modules/analytics/analytics.routes";
 import { FlightConverterRoutes } from "../modules/flight-converter/flight-converter.routes";
 import { HotelCatalogRoutes } from "../modules/hotel-catalog/hotel-catalog.routes";
 import { TransferCatalogRoutes } from "../modules/transfer-catalog/transfer-catalog.routes";
+import { QuotationsRoutes } from "../modules/quotations/quotation.routes";
 import { UsersRoutes } from "../modules/users/users.routes";
 
 export const v1Router = Router();
@@ -14,6 +15,7 @@ const moduleRoutes = [
   { path: "/dashboard", route: DashboardRoutes },
   { path: "/analytics", route: AnalyticsRoutes },
   { path: "/users", route: UsersRoutes },
+  { path: "/quotations", route: QuotationsRoutes },
   { path: "/flight-converter", route: FlightConverterRoutes },
   { path: "", route: HotelCatalogRoutes },
   { path: "", route: TransferCatalogRoutes },

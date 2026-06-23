@@ -10,11 +10,12 @@ export const SEED_HOTEL_AREAS: Array<{
   slug: string;
   name: string;
   sortOrder: number;
+  calculatorType: "umrah" | "holiday";
 }> = [
-  { slug: "makkah", name: "Makkah", sortOrder: 1 },
-  { slug: "madinah", name: "Madinah", sortOrder: 2 },
-  { slug: "holiday", name: "Holiday", sortOrder: 3 },
-  { slug: "jeddah", name: "Jeddah", sortOrder: 4 },
+  { slug: "makkah", name: "Makkah", sortOrder: 1, calculatorType: "umrah" },
+  { slug: "madinah", name: "Madinah", sortOrder: 2, calculatorType: "umrah" },
+  { slug: "holiday", name: "Holiday", sortOrder: 1, calculatorType: "holiday" },
+  { slug: "jeddah", name: "Jeddah", sortOrder: 2, calculatorType: "holiday" },
 ];
 
 export const SEED_HOTELS_BY_AREA_SLUG: Record<string, THotelSeedEntry[]> = {
