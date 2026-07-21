@@ -5,8 +5,15 @@ import { Types } from "mongoose";
 import AppError from "../../utils/AppError";
 import { FlightConverterUsage } from "../flight-converter/models/flight-converter-usage.model";
 import { Quotation, type IQuotation } from "../quotations/quotation.model";
+import {
+  buildQuotationRefId,
+} from "../quotations/quotation-id.utils";
 import { getQuotationTotalValue } from "../quotations/quotation-projection.utils";
-import { QuotationStatus } from "../quotations/quotation.types";
+import {
+  QuotationCalculatorType,
+  QuotationStatus,
+  QuotationTemplateId,
+} from "../quotations/quotation.types";
 import { User } from "../user/user.model";
 import { UserRole, UserStatus } from "../user/user.types";
 import {
@@ -43,7 +50,9 @@ async function resolveActorObjectId(userId: string): Promise<Types.ObjectId> {
 }
 
 function buildQuotationFilter(actorObjectId: Types.ObjectId | null) {
-  return actorObjectId ? { createdBy: actorObjectId } : {};
+  return actorObjectId
+    ? { createdBy: actorObjectId, deletedAt: null }
+    : { deletedAt: null };
 }
 
 async function countByStatus(filter: Record<string, unknown>) {
@@ -148,8 +157,12 @@ async function buildAdminStats(filter: Record<string, unknown>): Promise<TDashbo
       status: QuotationStatus.CONFIRMED,
       createdAt: { $gte: previousMonthStart, $lte: previousMonthEnd },
     }),
-    Quotation.distinct("createdBy", { createdAt: { $gte: thirtyDaysAgo } }),
     Quotation.distinct("createdBy", {
+      deletedAt: null,
+      createdAt: { $gte: thirtyDaysAgo },
+    }),
+    Quotation.distinct("createdBy", {
+      deletedAt: null,
       createdAt: { $gte: previousThirtyDaysStart, $lte: previousThirtyDaysEnd },
     }),
   ]);
@@ -311,10 +324,20 @@ async function buildEmployeeStats(filter: Record<string, unknown>): Promise<TDas
   ];
 }
 
+function resolveQuotationRefId(quotation: IQuotation): string {
+  if (quotation.refId) return quotation.refId;
+
+  return buildQuotationRefId(
+    quotation.calculatorType ?? QuotationCalculatorType.UMRAH,
+    quotation.templateId ?? QuotationTemplateId.CLASSIC,
+    quotation.referenceNumber,
+  );
+}
+
 function mapRecentQuotations(quotations: TPopulatedQuotation[]): TDashboardQuotationRowDto[] {
   return quotations.map((quotation) => ({
     id: String(quotation._id),
-    reference: formatReference(quotation.referenceNumber),
+    reference: formatReference(resolveQuotationRefId(quotation)),
     clientName: quotation.customerName,
     status: quotation.status,
     value: getQuotationTotalValue(quotation),
@@ -339,7 +362,7 @@ async function buildRecentActivity(
       actorName,
       actorInitials: initialsFromName(actorName),
       action,
-      reference: formatReference(quotation.referenceNumber),
+      reference: formatReference(resolveQuotationRefId(quotation)),
       createdAt: quotation.createdAt.toISOString(),
     };
   });

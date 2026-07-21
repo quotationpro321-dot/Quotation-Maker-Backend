@@ -35,6 +35,8 @@ interface EnvConfig {
   RESEND_FROM_EMAIL: string;
   /** Days after soft-delete before PII is anonymized automatically. */
   USER_ANONYMIZE_AFTER_DAYS: number;
+  /** Days a deleted quotation remains restorable before permanent deletion. */
+  QUOTATION_DELETE_AFTER_DAYS: number;
 }
 
 const loadEnvVariables = (): EnvConfig => {
@@ -107,6 +109,10 @@ const loadEnvVariables = (): EnvConfig => {
     USER_ANONYMIZE_AFTER_DAYS: Math.max(
       1,
       Number(process.env.USER_ANONYMIZE_AFTER_DAYS ?? 60),
+    ),
+    QUOTATION_DELETE_AFTER_DAYS: Math.max(
+      1,
+      Number(process.env.QUOTATION_DELETE_AFTER_DAYS ?? 60),
     ),
   };
 };

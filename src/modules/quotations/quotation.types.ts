@@ -84,20 +84,31 @@ export type TQuotationCreatorDto = {
 export type TQuotationListItemDto = {
   id: string;
   referenceNumber: number;
+  refId: string;
+  readableId: string;
+  calculatorType: QuotationCalculatorType;
   customerName: string;
   customerPhone?: string;
   quotationDate: string;
   makkahHotel: string;
   madinahHotel: string;
   status: QuotationStatus;
+  completedOptionId?: string;
+  completedOptionTitle?: string;
+  deletedAt?: string;
   createdBy: TQuotationCreatorDto;
   totalValue?: number;
   currency: string;
 };
 
+export type TUpdateQuotationStatusBody = {
+  status: QuotationStatus;
+  /** Required when status is confirmed; must identify exactly one option. */
+  completedOptionId?: string;
+};
+
 export type TQuotationDetailDto = TQuotationListItemDto & {
   customerNumber?: string;
-  calculatorType: QuotationCalculatorType;
   templateId: QuotationTemplateId;
   calculatorStates: TQuotationCalculatorTypeStates;
   options: TQuotationOption[];
@@ -106,6 +117,8 @@ export type TQuotationDetailDto = TQuotationListItemDto & {
 export type TSaveQuotationBody = {
   id?: string;
   referenceNumber?: number;
+  refId?: string;
+  readableId?: string;
   customerName: string;
   customerNumber?: string;
   calculatorType: QuotationCalculatorType;

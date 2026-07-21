@@ -32,8 +32,8 @@ export function initialsFromName(name: string): string {
   return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
 }
 
-export function formatReference(referenceNumber: number): string {
-  return `#${referenceNumber}`;
+export function formatReference(refId: string): string {
+  return refId;
 }
 
 export type TDateRange = {

@@ -9,15 +9,22 @@ import {
 
 export type IQuotation = {
   referenceNumber: number;
+  /** Compact public reference, e.g. ASSG000007 */
+  refId?: string;
+  /** Human-readable path + UUID, e.g. "Alsama > Sky Guru > holiday <uuid>" */
+  readableId?: string;
   customerName: string;
   customerNumber: string;
   calculatorType: QuotationCalculatorType;
   quotationDate: Date;
   status: QuotationStatus;
+  /** Set only when status is confirmed; exactly one completed option. */
+  completedOptionId?: string | null;
   currency: string;
   templateId: QuotationTemplateId;
   calculatorStates: TQuotationCalculatorTypeStates;
   createdBy: Types.ObjectId;
+  deletedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -25,6 +32,8 @@ export type IQuotation = {
 const quotationSchema = new mongoose.Schema<IQuotation>(
   {
     referenceNumber: { type: Number, required: true, unique: true, index: true },
+    refId: { type: String, unique: true, sparse: true, index: true, trim: true },
+    readableId: { type: String, unique: true, sparse: true, index: true, trim: true },
     customerName: { type: String, required: true, trim: true, index: true },
     customerNumber: { type: String, default: "", trim: true },
     calculatorType: {
@@ -39,6 +48,7 @@ const quotationSchema = new mongoose.Schema<IQuotation>(
       default: QuotationStatus.DRAFT,
       index: true,
     },
+    completedOptionId: { type: String, default: null, trim: true },
     currency: { type: String, default: "GBP", trim: true },
     templateId: {
       type: String,
@@ -47,6 +57,7 @@ const quotationSchema = new mongoose.Schema<IQuotation>(
     },
     calculatorStates: { type: mongoose.Schema.Types.Mixed, required: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    deletedAt: { type: Date, default: null, index: true },
   },
   {
     versionKey: false,
