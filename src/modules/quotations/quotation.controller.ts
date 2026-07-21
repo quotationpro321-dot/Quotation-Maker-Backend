@@ -1,0 +1,139 @@
+import { Request, Response } from "express";
+import { StatusCodes } from "http-status-codes";
+
+import { catchAsync } from "../../utils/catchAsync";
+import { sendResponse } from "../../utils/sendResponse";
+import { quotationsService } from "./quotation.service";
+import type {
+  TListQuotationsQuery,
+  TSaveQuotationBody,
+  TUpdateQuotationStatusBody,
+} from "./quotation.validation";
+
+function getActor(req: Request) {
+  return {
+    userId: String(req.user?.userId ?? ""),
+    role: String(req.user?.role ?? ""),
+  };
+}
+
+export const quotationsController = {
+  list: catchAsync(async (req: Request, res: Response) => {
+    const query = req.validatedQuery as TListQuotationsQuery;
+    const data = await quotationsService.list(query);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Quotations retrieved successfully",
+      data,
+    });
+  }),
+
+  listMine: catchAsync(async (req: Request, res: Response) => {
+    const query = req.validatedQuery as TListQuotationsQuery;
+    const { userId } = getActor(req);
+    const data = await quotationsService.list(query, userId);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Your quotations retrieved successfully",
+      data,
+    });
+  }),
+
+  listDeleted: catchAsync(async (req: Request, res: Response) => {
+    const query = req.validatedQuery as TListQuotationsQuery;
+    const data = await quotationsService.listDeleted(query);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Deleted quotations retrieved successfully",
+      data,
+    });
+  }),
+
+  getById: catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.validatedParams as { id: string };
+    const { userId, role } = getActor(req);
+    const data = await quotationsService.getById(id, userId, role);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Quotation retrieved successfully",
+      data,
+    });
+  }),
+
+  getFullById: catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.validatedParams as { id: string };
+    const { userId, role } = getActor(req);
+    const data = await quotationsService.getFullById(id, userId, role);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Quotation detail retrieved successfully",
+      data,
+    });
+  }),
+
+  create: catchAsync(async (req: Request, res: Response) => {
+    const body = req.body as TSaveQuotationBody;
+    const { userId } = getActor(req);
+    const data = await quotationsService.create(body, userId);
+    sendResponse(res, {
+      statusCode: StatusCodes.CREATED,
+      success: true,
+      message: "Quotation saved successfully",
+      data,
+    });
+  }),
+
+  update: catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.validatedParams as { id: string };
+    const body = req.body as TSaveQuotationBody;
+    const { userId, role } = getActor(req);
+    const data = await quotationsService.update(id, body, userId, role);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Quotation updated successfully",
+      data,
+    });
+  }),
+
+  updateStatus: catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.validatedParams as { id: string };
+    const body = req.body as TUpdateQuotationStatusBody;
+    const { userId, role } = getActor(req);
+    const data = await quotationsService.updateStatus(id, body, userId, role);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Quotation status updated successfully",
+      data,
+    });
+  }),
+
+  remove: catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.validatedParams as { id: string };
+    const { userId, role } = getActor(req);
+    await quotationsService.remove(id, userId, role);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Quotation moved to bin successfully",
+      data: null,
+    });
+  }),
+
+  restore: catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.validatedParams as { id: string };
+    const data = await quotationsService.restore(id);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Quotation restored successfully",
+      data,
+    });
+  }),
+};

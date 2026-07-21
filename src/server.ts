@@ -3,6 +3,7 @@ import app from "./app";
 import { connectDB } from "./config/db";
 import { envVars } from "./config/env";
 import redisClient, { connectRedis } from "./config/redis.config";
+import { startDeletedQuotationPurgeScheduler } from "./jobs/deletedQuotationPurge.scheduler";
 import { startDeletedUserAnonymizeScheduler } from "./jobs/deletedUserAnonymize.scheduler";
 import { seedAdmin } from "./utils/seedAdmin";
 
@@ -25,6 +26,7 @@ const startServer = async () => {
     }
 
     startDeletedUserAnonymizeScheduler();
+    startDeletedQuotationPurgeScheduler();
   } catch (error) {
     console.log(error);
   }

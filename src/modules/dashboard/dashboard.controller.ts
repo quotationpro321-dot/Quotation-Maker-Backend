@@ -3,7 +3,10 @@ import { StatusCodes } from "http-status-codes";
 
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
+import { dashboardAnalyticsService } from "./dashboard-analytics.service";
+import { dashboardOverviewService } from "./dashboard-overview.service";
 import { dashboardService } from "./dashboard.service";
+import type { TAnalyticsOverviewQuery } from "./dashboard.validation";
 
 export const dashboardController = {
   getStats: catchAsync(async (_req: Request, res: Response) => {
@@ -13,6 +16,27 @@ export const dashboardController = {
       success: true,
       message: "Dashboard stats retrieved successfully",
       data: stats,
+    });
+  }),
+
+  getOverview: catchAsync(async (req: Request, res: Response) => {
+    const data = await dashboardOverviewService.getOverview(req);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Dashboard overview retrieved successfully",
+      data,
+    });
+  }),
+
+  getAnalytics: catchAsync(async (req: Request, res: Response) => {
+    const query = req.validatedQuery as TAnalyticsOverviewQuery;
+    const data = await dashboardAnalyticsService.getAnalytics(req, query.period);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Analytics overview retrieved successfully",
+      data,
     });
   }),
 

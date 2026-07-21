@@ -21,6 +21,8 @@ export interface IUser {
   status: UserStatus;
   /** Optional WhatsApp contact shown on the user's quotation PDFs. */
   whatsappNumber?: string | null;
+  /** Job title shown on quotation PDFs (e.g. Umrah Travel Consultant). */
+  consultantDesignation?: string | null;
   profilePhotoUrl?: string;
   /** Cloudinary `public_id` for deleting the previous avatar on replace. */
   profilePhotoPublicId?: string;

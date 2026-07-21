@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { connectDB } from "../config/db";
+import { CalculatorCatalogType } from "../modules/catalog/catalog.types";
 import {
   SEED_HOTEL_AREAS,
   SEED_HOTELS_BY_AREA_SLUG,
@@ -16,25 +17,37 @@ async function seedHotelReferenceData() {
   const areaIdBySlug = new Map<string, string>();
 
   for (const area of SEED_HOTEL_AREAS) {
-    const doc = await HotelArea.findOneAndUpdate(
-      { slug: area.slug },
+    const calculatorType =
+      area.calculatorType === "holiday"
+        ? CalculatorCatalogType.HOLIDAY
+        : CalculatorCatalogType.UMRAH;
+
+    await HotelArea.updateOne(
+      { slug: area.slug, calculatorType },
       {
         $set: {
           slug: area.slug,
           name: area.name,
+          calculatorType,
           sortOrder: area.sortOrder,
           isActive: true,
         },
       },
-      { upsert: true, new: true },
+      { upsert: true },
     );
-    areaIdBySlug.set(area.slug, String(doc._id));
+
+    const doc = await HotelArea.findOne({ slug: area.slug, calculatorType }).lean();
+    if (!doc?._id) continue;
+    areaIdBySlug.set(`${area.calculatorType}:${area.slug}`, String(doc._id));
   }
 
   let hotelCount = 0;
 
   for (const [slug, hotels] of Object.entries(SEED_HOTELS_BY_AREA_SLUG)) {
-    const areaId = areaIdBySlug.get(slug);
+    const areaMeta = SEED_HOTEL_AREAS.find((area) => area.slug === slug);
+    const areaId = areaMeta
+      ? areaIdBySlug.get(`${areaMeta.calculatorType}:${slug}`)
+      : undefined;
     if (!areaId) continue;
 
     for (const hotel of hotels) {
