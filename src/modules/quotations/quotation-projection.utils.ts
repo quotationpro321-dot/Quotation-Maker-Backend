@@ -2,7 +2,12 @@ import type { Types } from "mongoose";
 
 import type { IQuotation } from "./quotation.model";
 import {
+  buildQuotationReadableId,
+  buildQuotationRefId,
+} from "./quotation-id.utils";
+import {
   QuotationCalculatorType,
+  QuotationTemplateId,
   type TQuotationCalculatorTypeState,
   type TQuotationDetailDto,
   type TQuotationHotel,
@@ -116,18 +121,36 @@ export function toQuotationListItemDto(
   quotation: IQuotation & { _id: Types.ObjectId; createdBy: TPopulatedCreator },
 ): TQuotationListItemDto {
   const activeState = getActiveCalculatorState(quotation);
-  const firstOption = activeState?.options?.[0];
+  const options = activeState?.options ?? [];
+  const firstOption = options[0];
   const { makkahHotel, madinahHotel } = deriveHotelNames(firstOption);
+  const calculatorType = quotation.calculatorType ?? QuotationCalculatorType.UMRAH;
+  const templateId = quotation.templateId ?? QuotationTemplateId.CLASSIC;
+  const documentId = String(quotation._id);
+  const completedOptionId = quotation.completedOptionId?.trim() || undefined;
+  const completedOption = completedOptionId
+    ? options.find((option) => option.id === completedOptionId)
+    : undefined;
 
   return {
-    id: String(quotation._id),
+    id: documentId,
     referenceNumber: quotation.referenceNumber,
+    refId:
+      quotation.refId ??
+      buildQuotationRefId(calculatorType, templateId, quotation.referenceNumber),
+    readableId:
+      quotation.readableId ??
+      buildQuotationReadableId(calculatorType, templateId, documentId),
+    calculatorType,
     customerName: quotation.customerName,
     customerPhone: quotation.customerNumber || undefined,
     quotationDate: quotation.quotationDate.toISOString(),
     makkahHotel,
     madinahHotel,
     status: quotation.status,
+    completedOptionId,
+    completedOptionTitle: completedOption?.title?.trim() || undefined,
+    deletedAt: quotation.deletedAt?.toISOString(),
     createdBy: toCreatorDto(quotation.createdBy),
     totalValue: firstOption ? calculateOptionTotalValue(firstOption) : undefined,
     currency: quotation.currency,
@@ -143,7 +166,6 @@ export function toQuotationDetailDto(
   return {
     ...listItem,
     customerNumber: quotation.customerNumber || undefined,
-    calculatorType: quotation.calculatorType,
     templateId: quotation.templateId,
     calculatorStates: quotation.calculatorStates,
     options,

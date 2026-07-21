@@ -6,12 +6,18 @@ import AppError from "../../utils/AppError";
 import { User } from "../user/user.model";
 import { UserRole } from "../user/user.types";
 import { getNextReferenceNumber } from "./quotation-counter.model";
+import { createQuotationIdentity } from "./quotation-id.utils";
 import { Quotation, type IQuotation } from "./quotation.model";
 import {
+  getActiveOptions,
   toQuotationDetailDto,
   toQuotationListItemDto,
 } from "./quotation-projection.utils";
-import type { TSaveQuotationBody } from "./quotation.types";
+import {
+  QuotationStatus,
+  type TSaveQuotationBody,
+  type TUpdateQuotationStatusBody,
+} from "./quotation.types";
 import type { TListQuotationsQuery } from "./quotation.validation";
 
 type TPopulatedQuotation = IQuotation & {
@@ -26,7 +32,7 @@ type TPopulatedQuotation = IQuotation & {
 const CREATOR_POPULATE = { path: "createdBy", select: "userId name" };
 
 function toBuilderQuery(query: TListQuotationsQuery): Record<string, unknown> {
-  const { search, sortBy, sortOrder, createdById, ...rest } = query;
+  const { search, sortBy, sortOrder, createdById: _createdById, ...rest } = query;
   const prepared: Record<string, unknown> = { ...rest };
 
   if (search) prepared.searchTerm = search;
@@ -70,12 +76,20 @@ function assertQuotationAccess(
   }
 }
 
-async function findPopulatedQuotation(id: string): Promise<TPopulatedQuotation> {
+async function findPopulatedQuotation(
+  id: string,
+  includeDeleted = false,
+): Promise<TPopulatedQuotation> {
   if (!Types.ObjectId.isValid(id)) {
     throw new AppError(StatusCodes.BAD_REQUEST, "Invalid quotation id.");
   }
 
-  const quotation = await Quotation.findById(id).populate(CREATOR_POPULATE).lean<TPopulatedQuotation>();
+  const filter: Record<string, unknown> = { _id: id };
+  if (!includeDeleted) filter.deletedAt = null;
+
+  const quotation = await Quotation.findOne(filter)
+    .populate(CREATOR_POPULATE)
+    .lean<TPopulatedQuotation>();
   if (!quotation) {
     throw new AppError(StatusCodes.NOT_FOUND, "Quotation not found.");
   }
@@ -96,9 +110,26 @@ function buildQuotationDocument(body: TSaveQuotationBody) {
   };
 }
 
+function resolveCompletedOption(
+  quotation: Pick<IQuotation, "calculatorType" | "calculatorStates">,
+  completedOptionId: string,
+) {
+  const options = getActiveOptions(quotation);
+  const optionIndex = options.findIndex((option) => option.id === completedOptionId);
+
+  if (optionIndex < 0) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "Completed option must be one of this quotation's options.",
+    );
+  }
+
+  return { option: options[optionIndex], optionIndex };
+}
+
 export const quotationsService = {
   list: async (query: TListQuotationsQuery, actorUserId?: string) => {
-    const baseFilter: Record<string, unknown> = {};
+    const baseFilter: Record<string, unknown> = { deletedAt: null };
 
     if (actorUserId) {
       baseFilter.createdBy = await resolveActorObjectId(actorUserId);
@@ -110,7 +141,34 @@ export const quotationsService = {
     }
 
     const quotationQuery = new QueryBuilder(Quotation.find(baseFilter), toBuilderQuery(query))
-      .search(["customerName", "customerNumber"])
+      .search(["customerName", "customerNumber", "refId", "readableId"])
+      .filter()
+      .sort()
+      .paginate()
+      .populate(CREATOR_POPULATE.path, CREATOR_POPULATE.select);
+
+    const [items, meta] = await Promise.all([
+      quotationQuery.modelQuery.lean<TPopulatedQuotation[]>(),
+      quotationQuery.countTotal(),
+    ]);
+
+    return {
+      items: items.map(toQuotationListItemDto),
+      pagination: {
+        page: meta.page,
+        limit: meta.limit,
+        total: meta.total,
+        totalPages: meta.totalPage,
+      },
+    };
+  },
+
+  listDeleted: async (query: TListQuotationsQuery) => {
+    const quotationQuery = new QueryBuilder(
+      Quotation.find({ deletedAt: { $ne: null } }),
+      toBuilderQuery(query),
+    )
+      .search(["customerName", "customerNumber", "refId", "readableId"])
       .filter()
       .sort()
       .paginate()
@@ -147,9 +205,15 @@ export const quotationsService = {
   create: async (body: TSaveQuotationBody, actorUserId: string) => {
     const createdBy = await resolveActorObjectId(actorUserId);
     const referenceNumber = await getNextReferenceNumber();
+    const identity = createQuotationIdentity({
+      calculatorType: body.calculatorType,
+      templateId: body.templateId,
+      referenceNumber,
+    });
 
     const quotation = await Quotation.create({
       referenceNumber,
+      ...identity,
       ...buildQuotationDocument(body),
       createdBy,
     });
@@ -174,11 +238,64 @@ export const quotationsService = {
     const existing = await findPopulatedQuotation(id);
     assertQuotationAccess(existing, actorUserId, actorRole);
 
-    const updated = await Quotation.findByIdAndUpdate(
-      id,
-      buildQuotationDocument(body),
-      { new: true },
-    )
+    const document = buildQuotationDocument(body);
+    const patch: Record<string, unknown> = { ...document };
+
+    if (body.status !== QuotationStatus.CONFIRMED) {
+      patch.completedOptionId = null;
+    }
+
+    const updated = await Quotation.findByIdAndUpdate(id, patch, { new: true })
+      .populate(CREATOR_POPULATE)
+      .lean<TPopulatedQuotation>();
+
+    if (!updated) {
+      throw new AppError(StatusCodes.NOT_FOUND, "Quotation not found.");
+    }
+
+    return toQuotationDetailDto(updated);
+  },
+
+  updateStatus: async (
+    id: string,
+    body: TUpdateQuotationStatusBody,
+    actorUserId: string,
+    actorRole: string,
+  ) => {
+    const existing = await findPopulatedQuotation(id);
+    assertQuotationAccess(existing, actorUserId, actorRole);
+
+    const patch: Record<string, unknown> = {
+      status: body.status,
+    };
+
+    if (body.status === QuotationStatus.CONFIRMED) {
+      const completedOptionId = body.completedOptionId?.trim();
+      if (!completedOptionId) {
+        throw new AppError(
+          StatusCodes.BAD_REQUEST,
+          "Select the completed option when confirming a quotation.",
+        );
+      }
+
+      const { optionIndex } = resolveCompletedOption(existing, completedOptionId);
+      const calculatorStates = structuredClone(existing.calculatorStates);
+      const activeState = calculatorStates[existing.calculatorType];
+      if (!activeState) {
+        throw new AppError(
+          StatusCodes.BAD_REQUEST,
+          "Quotation options are missing for the active quotation type.",
+        );
+      }
+
+      activeState.activeOptionIndex = optionIndex;
+      patch.completedOptionId = completedOptionId;
+      patch.calculatorStates = calculatorStates;
+    } else {
+      patch.completedOptionId = null;
+    }
+
+    const updated = await Quotation.findByIdAndUpdate(id, patch, { new: true })
       .populate(CREATOR_POPULATE)
       .lean<TPopulatedQuotation>();
 
@@ -192,6 +309,27 @@ export const quotationsService = {
   remove: async (id: string, actorUserId: string, actorRole: string) => {
     const existing = await findPopulatedQuotation(id);
     assertQuotationAccess(existing, actorUserId, actorRole);
-    await Quotation.findByIdAndDelete(id);
+    await Quotation.findByIdAndUpdate(id, { deletedAt: new Date() });
+  },
+
+  restore: async (id: string) => {
+    const existing = await findPopulatedQuotation(id, true);
+    if (!existing.deletedAt) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Quotation is not in the bin.");
+    }
+
+    const restored = await Quotation.findByIdAndUpdate(
+      id,
+      { deletedAt: null },
+      { new: true },
+    )
+      .populate(CREATOR_POPULATE)
+      .lean<TPopulatedQuotation>();
+
+    if (!restored) {
+      throw new AppError(StatusCodes.NOT_FOUND, "Deleted quotation not found.");
+    }
+
+    return toQuotationListItemDto(restored);
   },
 };

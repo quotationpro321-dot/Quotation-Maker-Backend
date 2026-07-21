@@ -83,6 +83,8 @@ const calculatorStatesSchema = z.object({
 export const saveQuotationBodySchema = z.object({
   id: z.string().trim().optional(),
   referenceNumber: z.coerce.number().int().positive().optional(),
+  refId: z.string().trim().optional(),
+  readableId: z.string().trim().optional(),
   customerName: z.string().trim().min(1, { message: "Customer name is required." }),
   customerNumber: z.string().trim().optional().default(""),
   calculatorType: z.nativeEnum(QuotationCalculatorType),
@@ -99,7 +101,16 @@ export const listQuotationsQuerySchema = z.object({
   search: z.string().trim().max(120).optional(),
   status: z.nativeEnum(QuotationStatus).optional(),
   sortBy: z
-    .enum(["referenceNumber", "customerName", "quotationDate", "status", "createdBy"])
+    .enum([
+      "referenceNumber",
+      "refId",
+      "calculatorType",
+      "customerName",
+      "quotationDate",
+      "deletedAt",
+      "status",
+      "createdBy",
+    ])
     .optional(),
   sortOrder: z.enum(["asc", "desc"]).optional(),
   createdById: z.string().trim().optional(),
@@ -109,5 +120,29 @@ export const quotationIdParamsSchema = z.object({
   id: z.string().trim().min(1, { message: "Quotation id is required." }),
 });
 
+export const updateQuotationStatusBodySchema = z
+  .object({
+    status: z.nativeEnum(QuotationStatus),
+    completedOptionId: z.string().trim().min(1).optional(),
+  })
+  .superRefine((value, context) => {
+    if (value.status === QuotationStatus.CONFIRMED && !value.completedOptionId) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["completedOptionId"],
+        message: "Select the completed option when confirming a quotation.",
+      });
+    }
+
+    if (value.status !== QuotationStatus.CONFIRMED && value.completedOptionId) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["completedOptionId"],
+        message: "Completed option is only allowed for confirmed quotations.",
+      });
+    }
+  });
+
 export type TListQuotationsQuery = z.infer<typeof listQuotationsQuerySchema>;
 export type TSaveQuotationBody = z.infer<typeof saveQuotationBodySchema>;
+export type TUpdateQuotationStatusBody = z.infer<typeof updateQuotationStatusBodySchema>;

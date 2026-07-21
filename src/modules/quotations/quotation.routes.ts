@@ -8,6 +8,7 @@ import {
   listQuotationsQuerySchema,
   quotationIdParamsSchema,
   saveQuotationBodySchema,
+  updateQuotationStatusBodySchema,
 } from "./quotation.validation";
 
 const router = Router();
@@ -18,6 +19,13 @@ router.get(
   checkAuth(...staffRoles),
   validateRequest(listQuotationsQuerySchema, "query"),
   quotationsController.listMine,
+);
+
+router.get(
+  "/bin",
+  checkAuth(UserRole.ADMIN),
+  validateRequest(listQuotationsQuerySchema, "query"),
+  quotationsController.listDeleted,
 );
 
 router.get(
@@ -54,6 +62,21 @@ router.put(
   validateRequest(quotationIdParamsSchema, "params"),
   validateRequest(saveQuotationBodySchema),
   quotationsController.update,
+);
+
+router.patch(
+  "/:id/status",
+  checkAuth(...staffRoles),
+  validateRequest(quotationIdParamsSchema, "params"),
+  validateRequest(updateQuotationStatusBodySchema),
+  quotationsController.updateStatus,
+);
+
+router.post(
+  "/:id/restore",
+  checkAuth(UserRole.ADMIN),
+  validateRequest(quotationIdParamsSchema, "params"),
+  quotationsController.restore,
 );
 
 router.delete(

@@ -87,6 +87,7 @@ export const dashboardAnalyticsService = {
 
     const [quotations, parseLogs] = await Promise.all([
       Quotation.find({
+        deletedAt: null,
         createdAt: { $gte: range.previousStart, $lte: range.end },
       })
         .populate({ path: "createdBy", select: "name" })
