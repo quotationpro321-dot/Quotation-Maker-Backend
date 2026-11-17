@@ -31,10 +31,13 @@ function calculateHotelTotal(option: TQuotationOption): number {
 }
 
 function calculateVisaTotal(option: TQuotationOption): number {
+  const saudiTourist = option.visaSaudiTourist ?? { pax: 0, cost: 0 };
+
   return (
     option.visaUmrah.pax * option.visaUmrah.cost +
     option.visaEVW.pax * option.visaEVW.cost +
-    option.visaHoliday.pax * option.visaHoliday.cost
+    option.visaHoliday.pax * option.visaHoliday.cost +
+    saudiTourist.pax * saudiTourist.cost
   );
 }
 
@@ -42,12 +45,32 @@ export function calculateOptionTotalValue(option: TQuotationOption): number {
   const hotelTotal = option.hotelSectionEnabled ? calculateHotelTotal(option) : 0;
   const visaTotal = option.visaSectionEnabled ? calculateVisaTotal(option) : 0;
   const transferCost = option.transferSectionEnabled ? option.transferCost : 0;
-  const serviceTotal = hotelTotal + visaTotal + transferCost;
+  const ziyarahCost =
+    option.transferSectionEnabled && option.includedServices?.ziyarah
+      ? (option.ziyarahCost ?? 0)
+      : 0;
+  const serviceTotal = hotelTotal + visaTotal + transferCost + ziyarahCost;
+  const flightFamilies =
+    option.flightFamilies && option.flightFamilies.length > 0
+      ? option.flightFamilies
+      : [
+          {
+            flightAdult: option.flightAdult,
+            flightYouth: option.flightYouth,
+            flightChild: option.flightChild,
+            flightInfant: option.flightInfant,
+          },
+        ];
   const flightTotal = option.flightSectionEnabled
-    ? option.flightAdult +
-      option.flightYouth +
-      option.flightChild +
-      option.flightInfant
+    ? flightFamilies.reduce(
+        (total, family) =>
+          total +
+          (family.flightAdult ?? 0) +
+          (family.flightYouth ?? 0) +
+          (family.flightChild ?? 0) +
+          (family.flightInfant ?? 0),
+        0,
+      )
     : 0;
   const totalMarkup = option.numPax * option.markupPerPerson;
 
@@ -144,6 +167,8 @@ export function toQuotationListItemDto(
     calculatorType,
     customerName: quotation.customerName,
     customerPhone: quotation.customerNumber || undefined,
+    customerEmail: quotation.customerEmail || undefined,
+    customerSource: quotation.customerSource || undefined,
     quotationDate: quotation.quotationDate.toISOString(),
     makkahHotel,
     madinahHotel,

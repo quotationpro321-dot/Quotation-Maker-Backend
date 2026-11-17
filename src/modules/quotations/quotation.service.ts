@@ -101,6 +101,8 @@ function buildQuotationDocument(body: TSaveQuotationBody) {
   return {
     customerName: body.customerName.trim(),
     customerNumber: body.customerNumber?.trim() ?? "",
+    customerEmail: body.customerEmail?.trim().toLowerCase() ?? "",
+    customerSource: body.customerSource?.trim() ?? "",
     calculatorType: body.calculatorType,
     quotationDate: new Date(body.quotationDate),
     status: body.status,
@@ -141,7 +143,7 @@ export const quotationsService = {
     }
 
     const quotationQuery = new QueryBuilder(Quotation.find(baseFilter), toBuilderQuery(query))
-      .search(["customerName", "customerNumber", "refId", "readableId"])
+      .search(["customerName", "customerNumber", "customerEmail", "refId", "readableId"])
       .filter()
       .sort()
       .paginate()
@@ -168,7 +170,7 @@ export const quotationsService = {
       Quotation.find({ deletedAt: { $ne: null } }),
       toBuilderQuery(query),
     )
-      .search(["customerName", "customerNumber", "refId", "readableId"])
+      .search(["customerName", "customerNumber", "customerEmail", "refId", "readableId"])
       .filter()
       .sort()
       .paginate()
