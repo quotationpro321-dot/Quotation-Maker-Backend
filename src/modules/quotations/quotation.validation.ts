@@ -34,6 +34,7 @@ const quotationOptionSchema = z.object({
     .array(
       z.object({
         id: z.string().min(1),
+        title: z.string().trim().optional().default(""),
         flightAdult: moneyField,
         flightYouth: moneyField,
         flightChild: moneyField,

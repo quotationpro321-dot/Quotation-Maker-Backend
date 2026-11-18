@@ -44,6 +44,7 @@ export type TQuotationHotel = {
 
 export type TQuotationFlightFamily = {
   id: string;
+  title: string;
   flightAdult: number;
   flightYouth: number;
   flightChild: number;
