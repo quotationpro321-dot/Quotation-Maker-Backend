@@ -17,6 +17,17 @@ export enum QuotationTemplateId {
   COMPACT = "compact",
 }
 
+export enum QuotationCustomerSource {
+  FACEBOOK = "facebook",
+  GOOGLE = "google",
+  INSTAGRAM = "instagram",
+  WEBSITE = "website",
+  OFFLINE = "offline",
+  REFERRAL = "referral",
+  REFERENCE = "reference",
+  WALK_IN = "walk_in",
+}
+
 export type TQuotationHotel = {
   name: string;
   city: string;
@@ -31,6 +42,21 @@ export type TQuotationHotel = {
   cost: number;
 };
 
+export type TQuotationFlightFamily = {
+  id: string;
+  title: string;
+  flightAdult: number;
+  flightYouth: number;
+  flightChild: number;
+  flightInfant: number;
+  rawItinerary: string;
+  flightSegments: unknown[];
+  flightItineraryMode: "text" | "image";
+  flightItineraryImage: string;
+  holdLuggage: string;
+  cabinLuggage: string;
+};
+
 export type TQuotationOption = {
   id: string;
   title: string;
@@ -38,11 +64,14 @@ export type TQuotationOption = {
   flightYouth: number;
   flightChild: number;
   flightInfant: number;
+  flightFamilies?: TQuotationFlightFamily[];
   hotels: TQuotationHotel[];
   visaUmrah: { pax: number; cost: number };
   visaEVW: { pax: number; cost: number };
   visaHoliday: { pax: number; cost: number };
+  visaSaudiTourist: { pax: number; cost: number };
   transferCost: number;
+  ziyarahCost: number;
   includedServices: Record<string, boolean>;
   customIncludedServices: Array<{ id: string; label: string; included: boolean }>;
   vehicleName: string;
@@ -89,6 +118,8 @@ export type TQuotationListItemDto = {
   calculatorType: QuotationCalculatorType;
   customerName: string;
   customerPhone?: string;
+  customerEmail?: string;
+  customerSource?: QuotationCustomerSource;
   quotationDate: string;
   makkahHotel: string;
   madinahHotel: string;
@@ -121,6 +152,8 @@ export type TSaveQuotationBody = {
   readableId?: string;
   customerName: string;
   customerNumber?: string;
+  customerEmail?: string;
+  customerSource?: QuotationCustomerSource | "";
   calculatorType: QuotationCalculatorType;
   quotationDate: string;
   status: QuotationStatus;

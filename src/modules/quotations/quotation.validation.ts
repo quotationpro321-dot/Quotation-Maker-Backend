@@ -2,6 +2,7 @@ import z from "zod";
 
 import {
   QuotationCalculatorType,
+  QuotationCustomerSource,
   QuotationStatus,
   QuotationTemplateId,
 } from "./quotation.types";
@@ -29,11 +30,35 @@ const quotationOptionSchema = z.object({
   flightYouth: moneyField,
   flightChild: moneyField,
   flightInfant: moneyField,
+  flightFamilies: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        title: z.string().trim().optional().default(""),
+        flightAdult: moneyField,
+        flightYouth: moneyField,
+        flightChild: moneyField,
+        flightInfant: moneyField,
+        rawItinerary: z.string().optional().default(""),
+        flightSegments: z.array(z.unknown()).optional().default([]),
+        flightItineraryMode: z.enum(["text", "image"]).optional().default("text"),
+        flightItineraryImage: z.string().optional().default(""),
+        holdLuggage: z.string().optional().default(""),
+        cabinLuggage: z.string().optional().default(""),
+      }),
+    )
+    .optional()
+    .default([]),
   hotels: z.array(quotationHotelSchema),
   visaUmrah: z.object({ pax: z.coerce.number(), cost: moneyField }),
   visaEVW: z.object({ pax: z.coerce.number(), cost: moneyField }),
   visaHoliday: z.object({ pax: z.coerce.number(), cost: moneyField }),
+  visaSaudiTourist: z
+    .object({ pax: z.coerce.number(), cost: moneyField })
+    .optional()
+    .default({ pax: 0, cost: 0 }),
   transferCost: moneyField,
+  ziyarahCost: moneyField.optional().default(0),
   includedServices: z.record(z.string(), z.boolean()),
   customIncludedServices: z.array(
     z.object({
@@ -87,6 +112,19 @@ export const saveQuotationBodySchema = z.object({
   readableId: z.string().trim().optional(),
   customerName: z.string().trim().min(1, { message: "Customer name is required." }),
   customerNumber: z.string().trim().optional().default(""),
+  customerEmail: z
+    .string()
+    .trim()
+    .optional()
+    .default("")
+    .refine(
+      (value) => value === "" || z.string().email().safeParse(value).success,
+      { message: "Enter a valid customer email address." },
+    ),
+  customerSource: z
+    .union([z.nativeEnum(QuotationCustomerSource), z.literal("")])
+    .optional()
+    .default(""),
   calculatorType: z.nativeEnum(QuotationCalculatorType),
   quotationDate: z.string().trim().min(1),
   status: z.nativeEnum(QuotationStatus).default(QuotationStatus.DRAFT),

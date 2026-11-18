@@ -2,6 +2,7 @@ import mongoose, { Model, Types } from "mongoose";
 
 import {
   QuotationCalculatorType,
+  QuotationCustomerSource,
   QuotationStatus,
   QuotationTemplateId,
   type TQuotationCalculatorTypeStates,
@@ -15,6 +16,8 @@ export type IQuotation = {
   readableId?: string;
   customerName: string;
   customerNumber: string;
+  customerEmail: string;
+  customerSource: QuotationCustomerSource | "";
   calculatorType: QuotationCalculatorType;
   quotationDate: Date;
   status: QuotationStatus;
@@ -36,6 +39,14 @@ const quotationSchema = new mongoose.Schema<IQuotation>(
     readableId: { type: String, unique: true, sparse: true, index: true, trim: true },
     customerName: { type: String, required: true, trim: true, index: true },
     customerNumber: { type: String, default: "", trim: true },
+    customerEmail: { type: String, default: "", trim: true, lowercase: true },
+    customerSource: {
+      type: String,
+      enum: [...Object.values(QuotationCustomerSource), ""],
+      default: "",
+      trim: true,
+      index: true,
+    },
     calculatorType: {
       type: String,
       enum: Object.values(QuotationCalculatorType),

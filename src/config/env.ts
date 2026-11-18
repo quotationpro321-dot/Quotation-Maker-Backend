@@ -22,6 +22,8 @@ interface EnvConfig {
   PDF_SHIFT_API_KEY: string;
   RESEND_API_KEY: string;
   FRONTEND_URL: string;
+  CORS_ALLOWED_ORIGINS: string[];
+
   RESET_PASSWORD_EXPIRES_MINUTES: number;
   FORGOT_PASSWORD_RATE_LIMIT_WINDOW_SECONDS: number;
   FORGOT_PASSWORD_RATE_LIMIT_MAX_REQUESTS: number;
@@ -61,6 +63,7 @@ const loadEnvVariables = (): EnvConfig => {
 
     "PDF_SHIFT_API_KEY",
     "FRONTEND_URL",
+    "CORS_ALLOWED_ORIGINS",
     "RESEND_API_KEY",
     "RESEND_FROM_EMAIL",
   ];
@@ -92,6 +95,10 @@ const loadEnvVariables = (): EnvConfig => {
     PDF_SHIFT_API_KEY: process.env.PDF_SHIFT_API_KEY as string,
     RESEND_API_KEY: process.env.RESEND_API_KEY as string,
     FRONTEND_URL: process.env.FRONTEND_URL as string,
+    CORS_ALLOWED_ORIGINS: (process.env.CORS_ALLOWED_ORIGINS ?? "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
     RESET_PASSWORD_EXPIRES_MINUTES: Number(process.env.RESET_PASSWORD_EXPIRES_MINUTES ?? 15),
     FORGOT_PASSWORD_RATE_LIMIT_WINDOW_SECONDS: Number(
       process.env.FORGOT_PASSWORD_RATE_LIMIT_WINDOW_SECONDS ?? 300,
@@ -106,14 +113,8 @@ const loadEnvVariables = (): EnvConfig => {
       process.env.FLIGHT_CONVERTER_RATE_LIMIT_MAX_REQUESTS ?? 30,
     ),
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL?.trim() || "onboarding@resend.dev",
-    USER_ANONYMIZE_AFTER_DAYS: Math.max(
-      1,
-      Number(process.env.USER_ANONYMIZE_AFTER_DAYS ?? 60),
-    ),
-    QUOTATION_DELETE_AFTER_DAYS: Math.max(
-      1,
-      Number(process.env.QUOTATION_DELETE_AFTER_DAYS ?? 60),
-    ),
+    USER_ANONYMIZE_AFTER_DAYS: Math.max(1, Number(process.env.USER_ANONYMIZE_AFTER_DAYS ?? 60)),
+    QUOTATION_DELETE_AFTER_DAYS: Math.max(1, Number(process.env.QUOTATION_DELETE_AFTER_DAYS ?? 60)),
   };
 };
 

@@ -13,7 +13,7 @@ const startServer = async () => {
   try {
     await connectDB();
     await connectRedis();
-    server = app.listen(envVars.PORT, () => {
+    server = app.listen(Number(envVars.PORT), () => {
       console.log(`App listening at port http://localhost:${envVars.PORT}`);
     });
 
@@ -69,7 +69,7 @@ process.on("SIGTERM", (err) => {
 
 process.on("SIGINT", (err) => {
   console.log(`SIGINT signal received... server shutting down...`, err);
-  
+
   if (server) {
     server.close(async () => {
       await redisClient.quit();

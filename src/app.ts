@@ -8,9 +8,12 @@ import { globalErrorHandler } from "./middleware/globalErrorHandler.middleware";
 import { notFound } from "./middleware/notFound.middleware";
 import { v1Router } from "./routes";
 import { sendResponse } from "./utils/sendResponse";
+import { envVars } from "./config/env";
 
 const app: Application = express();
-const allowedOrigins = ["http://localhost:3000", "https://alsama-dashboard.vercel.app"];
+const allowedOrigins = ["http://localhost:3000", ...envVars.CORS_ALLOWED_ORIGINS.map((origin) => origin.trim()).filter(
+  Boolean,
+)];
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
