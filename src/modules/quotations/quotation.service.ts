@@ -102,7 +102,7 @@ function buildQuotationDocument(body: TSaveQuotationBody) {
     customerName: body.customerName.trim(),
     customerNumber: body.customerNumber?.trim() ?? "",
     customerEmail: body.customerEmail?.trim().toLowerCase() ?? "",
-    customerSource: body.customerSource?.trim() ?? "",
+    customerSource: body.customerSource ?? "",
     calculatorType: body.calculatorType,
     quotationDate: new Date(body.quotationDate),
     status: body.status,
